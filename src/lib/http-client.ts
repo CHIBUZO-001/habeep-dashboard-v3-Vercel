@@ -1,0 +1,229 @@
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
+
+import { API_BASE_URL } from '../config/env'
+import { clearSession, getAccessToken, getSession, updateSessionTokens } from './session'
+
+const REFRESH_PATH = '/api/auth/refresh'
+const NGROK_BYPASS_HEADER = 'ngrok-skip-browser-warning'
+
+type LooseObject = Record<string, unknown>
+type RetriableRequestConfig = AxiosRequestConfig & { _retry?: boolean }
+
+export const httpClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    [NGROK_BYPASS_HEADER]: 'true',
+  },
+})
+
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    [NGROK_BYPASS_HEADER]: 'true',
+  },
+})
+
+let refreshTokensPromise: Promise<{
+  accessToken: string
+  refreshToken?: string
+  sessionId?: string
+}> | null = null
+
+function toObject(value: unknown): LooseObject | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+  return value as LooseObject
+}
+
+function getString(source: LooseObject | null, keys: string[]) {
+  if (!source) {
+    return undefined
+  }
+
+  for (const key of keys) {
+    const value = source[key]
+    if (typeof value === 'string' && value.trim()) {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function normalizeRefreshTokens(response: unknown) {
+  const rootPayload = toObject(response)
+  const envelope = toObject(rootPayload?.data) ?? toObject(rootPayload?.result) ?? rootPayload
+  const details = toObject(envelope?.details) ?? toObject(envelope?.data)
+  const tokens = toObject(details?.tokens) ?? toObject(envelope?.tokens)
+
+  const accessToken =
+    getString(details, ['accessToken', 'access_token']) ??
+    getString(tokens, ['accessToken', 'access_token']) ??
+    getString(envelope, ['accessToken', 'access_token', 'token'])
+  const refreshToken =
+    getString(details, ['refreshToken', 'refresh_token']) ??
+    getString(tokens, ['refreshToken', 'refresh_token']) ??
+    getString(envelope, ['refreshToken', 'refresh_token'])
+  const sessionId =
+    getString(details, ['sessionId', 'session_id']) ?? getString(envelope, ['sessionId', 'session_id'])
+
+  if (!accessToken) {
+    throw new Error('Refresh token request succeeded but no access token was returned.')
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+    sessionId,
+  }
+}
+
+function isAuthRequest(url: string) {
+  return url.includes('/auth/login') || url.includes('/auth/logout') || url.includes('/auth/refresh')
+}
+
+async function requestTokenRefresh() {
+  const existingSession = getSession()
+  const refreshToken = existingSession?.refreshToken
+
+  if (!refreshToken) {
+    throw new Error('No refresh token found. Please sign in again.')
+  }
+
+  const payload: Record<string, string> = { refreshToken }
+  if (existingSession?.sessionId) {
+    payload.sessionId = existingSession.sessionId
+  }
+
+  const authHeaders = {
+    Authorization: `Bearer ${refreshToken}`,
+  }
+
+  const response = await refreshClient.post(REFRESH_PATH, payload, {
+    headers: authHeaders,
+  })
+  const nextTokens = normalizeRefreshTokens(response.data)
+  updateSessionTokens(nextTokens)
+  return nextTokens
+}
+
+function getRefreshTokensPromise() {
+  if (!refreshTokensPromise) {
+    refreshTokensPromise = requestTokenRefresh().finally(() => {
+      refreshTokensPromise = null
+    })
+  }
+
+  return refreshTokensPromise
+}
+
+httpClient.interceptors.request.use((config) => {
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+
+  config.headers[NGROK_BYPASS_HEADER] = 'true'
+
+  return config
+})
+
+httpClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const statusCode = error.response?.status
+    const originalRequest = error.config as RetriableRequestConfig | undefined
+    const requestUrl = originalRequest?.url ?? ''
+    const shouldSkipRefresh =
+      statusCode !== 401 || !originalRequest || originalRequest._retry || isAuthRequest(requestUrl)
+
+    if (shouldSkipRefresh) {
+      if (statusCode === 401 && !requestUrl.includes('/auth/login')) {
+        clearSession()
+      }
+
+      return Promise.reject(error)
+    }
+
+    try {
+      const refreshedTokens = await getRefreshTokensPromise()
+      const retryConfig: RetriableRequestConfig = {
+        ...originalRequest,
+        _retry: true,
+        headers: {
+          ...(originalRequest.headers ?? {}),
+          Authorization: `Bearer ${refreshedTokens.accessToken}`,
+        },
+      }
+
+      return await httpClient.request(retryConfig)
+    } catch (refreshError) {
+      clearSession()
+      return Promise.reject(refreshError)
+    }
+  },
+)
+
+export async function httpGet<TResponse>(url: string, config?: AxiosRequestConfig) {
+  const response = await httpClient.get<TResponse>(url, config)
+  return response.data
+}
+
+export async function httpPost<TResponse, TPayload = unknown>(
+  url: string,
+  payload?: TPayload,
+  config?: AxiosRequestConfig<TPayload>,
+) {
+  const response = await httpClient.post<TResponse>(url, payload, config)
+  return response.data
+}
+
+export async function httpPut<TResponse, TPayload = unknown>(
+  url: string,
+  payload?: TPayload,
+  config?: AxiosRequestConfig<TPayload>,
+) {
+  const response = await httpClient.put<TResponse>(url, payload, config)
+  return response.data
+}
+
+export async function httpPatch<TResponse, TPayload = unknown>(
+  url: string,
+  payload?: TPayload,
+  config?: AxiosRequestConfig<TPayload>,
+) {
+  const response = await httpClient.patch<TResponse>(url, payload, config)
+  return response.data
+}
+
+export async function httpDelete<TResponse>(url: string, config?: AxiosRequestConfig) {
+  const response = await httpClient.delete<TResponse>(url, config)
+  return response.data
+}
+
+type ApiErrorPayload = {
+  message?: string
+  error?: string
+  errors?: Array<{ message?: string }>
+}
+
+export function getApiErrorMessage(error: unknown, fallback = 'Request failed. Try again.') {
+  if (axios.isAxiosError<ApiErrorPayload>(error)) {
+    const payload = error.response?.data
+    const firstValidationError = payload?.errors?.[0]?.message
+    return firstValidationError || payload?.message || payload?.error || fallback
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return fallback
+}
