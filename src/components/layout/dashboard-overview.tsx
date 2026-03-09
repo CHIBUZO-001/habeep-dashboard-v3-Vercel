@@ -1,8 +1,11 @@
 import {
   Activity,
   Building2,
-  MapPin,
+  Clock3,
+  Monitor,
   RefreshCw,
+  ShieldCheck,
+  ShieldX,
   TrendingUp,
   Users,
   Wallet,
@@ -26,6 +29,8 @@ import {
   getDashboardGeoDistribution,
   getDashboardMetrics,
   getDashboardSummary,
+  listAuthSessions,
+  type AuthSessionLog,
   type DashboardGeoDistribution,
   type DashboardMetricPoint,
   type DashboardMetrics,
@@ -44,8 +49,17 @@ const currencyFormatter = new Intl.NumberFormat('en-NG', {
   maximumFractionDigits: 0,
 })
 
+const labelCorrections: Record<string, string> = {
+  commision: 'commission',
+}
+
+const responsiveChartInitialDimension = {
+  width: 520,
+  height: 300,
+} as const
+
 const surfaceCardClass =
-  'group rounded-2xl border border-slate-200/85 bg-white/90 p-4 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-900/10 dark:border-slate-800/80 dark:bg-slate-900/90 dark:ring-slate-800/80 dark:hover:border-blue-900/60 dark:hover:shadow-blue-950/30'
+  'group rounded-2xl border border-slate-200/85 bg-white/90 p-2 md:p-4 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-900/10 dark:border-slate-800/80 dark:bg-slate-900/90 dark:ring-slate-800/80 dark:hover:border-blue-900/60 dark:hover:shadow-blue-950/30'
 
 function formatDateLabel(inputDate: string) {
   const parsedDate = new Date(inputDate)
@@ -64,6 +78,24 @@ function shortenCityName(city: string) {
     .replace(' State', '')
     .replace('(FCT)', 'FCT')
     .replace('Abuja FCT', 'Abuja')
+}
+
+function formatDisplayLabel(inputLabel: string) {
+  const segments = inputLabel
+    .trim()
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+
+  if (segments.length === 0) {
+    return 'Unknown'
+  }
+
+  return segments
+    .map((segment) => {
+      const normalizedSegment = labelCorrections[segment.toLowerCase()] ?? segment.toLowerCase()
+      return normalizedSegment.charAt(0).toUpperCase() + normalizedSegment.slice(1)
+    })
+    .join(' ')
 }
 
 function calculateSeriesTrend(series: DashboardMetricPoint[]) {
@@ -85,10 +117,78 @@ function calculateSeriesTrend(series: DashboardMetricPoint[]) {
   return ((latestValue - previousValue) / Math.abs(previousValue)) * 100
 }
 
+function formatSessionDateTime(inputDate: string) {
+  const parsedDate = new Date(inputDate)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'Unknown time'
+  }
+
+  return parsedDate.toLocaleString('en-NG', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatSessionAge(inputDate: string) {
+  const parsedDate = new Date(inputDate)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'N/A'
+  }
+
+  const differenceMs = Date.now() - parsedDate.getTime()
+  if (differenceMs < 60_000) {
+    return 'just now'
+  }
+
+  const differenceMinutes = Math.floor(differenceMs / 60_000)
+  if (differenceMinutes < 60) {
+    return `${differenceMinutes}m ago`
+  }
+
+  const differenceHours = Math.floor(differenceMinutes / 60)
+  if (differenceHours < 24) {
+    return `${differenceHours}h ago`
+  }
+
+  const differenceDays = Math.floor(differenceHours / 24)
+  if (differenceDays < 30) {
+    return `${differenceDays}d ago`
+  }
+
+  const differenceMonths = Math.floor(differenceDays / 30)
+  if (differenceMonths < 12) {
+    return `${differenceMonths}mo ago`
+  }
+
+  const differenceYears = Math.floor(differenceMonths / 12)
+  return `${differenceYears}y ago`
+}
+
+function normalizeSessionIp(ip: string) {
+  return ip.replace('::ffff:', '')
+}
+
+function getSessionSortTime(session: AuthSessionLog) {
+  const updatedAtMs = new Date(session.updatedAt).getTime()
+  if (!Number.isNaN(updatedAtMs)) {
+    return updatedAtMs
+  }
+
+  const createdAtMs = new Date(session.createdAt).getTime()
+  if (!Number.isNaN(createdAtMs)) {
+    return createdAtMs
+  }
+
+  return 0
+}
+
 export function DashboardOverview() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [geoDistribution, setGeoDistribution] = useState<DashboardGeoDistribution | null>(null)
+  const [sessionLogs, setSessionLogs] = useState<AuthSessionLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { toast } = useToast()
@@ -98,15 +198,17 @@ export function DashboardOverview() {
       setIsLoading(true)
 
       try {
-        const [summaryData, metricsData, geoDistributionData] = await Promise.all([
+        const [summaryData, metricsData, geoDistributionData, sessionLogsData] = await Promise.all([
           getDashboardSummary(),
           getDashboardMetrics(),
           getDashboardGeoDistribution(),
+          listAuthSessions().catch(() => []),
         ])
 
         setSummary(summaryData)
         setMetrics(metricsData)
         setGeoDistribution(geoDistributionData)
+        setSessionLogs(sessionLogsData)
         setErrorMessage(null)
       } catch (error) {
         const message = getApiErrorMessage(error, 'Failed to load dashboard overview.')
@@ -219,15 +321,45 @@ export function DashboardOverview() {
 
   const revenueBreakdown = useMemo(() => {
     const rows = summary?.revenueBreakdown ?? []
-    const totalAmount = rows.reduce((sum, row) => sum + row.amount, 0)
+    const derivedTotalAmount = rows.reduce((sum, row) => sum + row.amount, 0)
+    const totalAmount = (summary?.totalRevenue ?? 0) > 0 ? summary?.totalRevenue ?? 0 : derivedTotalAmount
 
     return rows
-      .map((row) => ({
-        ...row,
-        share: totalAmount > 0 ? (row.amount / totalAmount) * 100 : 0,
-      }))
+      .map((row) => {
+        const categories = Object.entries(row.categories)
+          .map(([categoryName, amount]) => ({
+            name: categoryName,
+            displayName: formatDisplayLabel(categoryName),
+            amount,
+          }))
+          .sort((leftCategory, rightCategory) => rightCategory.amount - leftCategory.amount)
+
+        return {
+          ...row,
+          displayName: formatDisplayLabel(row.name),
+          categories,
+          share: totalAmount > 0 ? (row.amount / totalAmount) * 100 : 0,
+        }
+      })
       .sort((leftRow, rightRow) => rightRow.amount - leftRow.amount)
   }, [summary])
+
+  const recentSessionLogs = useMemo(() => {
+    return [...sessionLogs].sort((leftSession, rightSession) => getSessionSortTime(rightSession) - getSessionSortTime(leftSession)).slice(0, 12)
+  }, [sessionLogs])
+
+  const sessionSummary = useMemo(() => {
+    const activeCount = sessionLogs.filter((session) => session.active).length
+    const revokedCount = sessionLogs.filter((session) => !session.active).length
+    const currentCount = sessionLogs.filter((session) => session.current).length
+
+    return {
+      total: sessionLogs.length,
+      active: activeCount,
+      revoked: revokedCount,
+      current: currentCount,
+    }
+  }, [sessionLogs])
 
   return (
     <>
@@ -250,19 +382,24 @@ export function DashboardOverview() {
         </section>
       ) : null}
 
-      <section className="dashboard-enter dashboard-enter-delay-1 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="dashboard-enter dashboard-enter-delay-1 grid grid-cols-2 gap-4 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <article key={stat.key} className={surfaceCardClass}>
+            <article key={stat.key} className={cn(surfaceCardClass, 'min-w-0')}>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <p className="min-w-0 truncate pr-2 text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
                   <Icon className="h-4 w-4" />
                 </span>
               </div>
 
-              <p className="mt-3 text-2xl font-semibold">{stat.value}</p>
+              <p
+                className="mt-3 truncate text-lg font-semibold leading-tight sm:text-2xl"
+                title={stat.value}
+              >
+                {stat.value}
+              </p>
               {stat.trend === null ? (
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   {stat.key === 'agents' ? 'Live currently active count' : 'No recent trend data'}
@@ -285,7 +422,7 @@ export function DashboardOverview() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-2')}>
+        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-2 min-w-0')}>
           <header className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Growth Metrics</h3>
@@ -303,9 +440,13 @@ export function DashboardOverview() {
             </button>
           </header>
 
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full min-w-0">
             {hasMetricsData ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                initialDimension={responsiveChartInitialDimension}
+              >
                 <LineChart data={metricsChartData} margin={{ top: 10, right: 12, left: -8, bottom: 6 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.25)" />
                   <XAxis
@@ -343,16 +484,20 @@ export function DashboardOverview() {
           </div>
         </article>
 
-        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-3')}>
+        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-3 min-w-0 pt-8')}>
           <header className="mb-4">
             <h3 className="text-sm font-semibold">Geo Distribution</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">Top cities by properties and agents</p>
           </header>
 
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full min-w-0">
             {geoChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={geoChartData} margin={{ top: 10, right: 10, left: -10, bottom: 40 }}>
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                initialDimension={responsiveChartInitialDimension}
+              >
+                <BarChart data={geoChartData} margin={{ top: 10, right: 10, left: -12, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                   <XAxis
                     dataKey="city"
@@ -363,7 +508,7 @@ export function DashboardOverview() {
                     textAnchor="end"
                     height={56}
                   />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
+                  <YAxis width={36} tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
                   <Tooltip
                     cursor={{ fill: 'rgba(148,163,184,0.12)' }}
                     contentStyle={{
@@ -385,59 +530,176 @@ export function DashboardOverview() {
         </article>
       </section>
 
-      <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-4')}>
-        <header className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold">Revenue Breakdown</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Categorized revenue contribution from summary endpoint
-            </p>
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-            <MapPin className="h-3.5 w-3.5" />
-            {revenueBreakdown.length} streams
-          </span>
-        </header>
+      <section className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
+        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-4')}>
+          <header className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">Revenue Breakdown</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Based on {currencyFormatter.format(summary?.totalRevenue ?? 0)} total revenue from the summary endpoint
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+              <Wallet className="h-3.5 w-3.5" />
+              {revenueBreakdown.length} streams
+            </span>
+          </header>
 
-        {revenueBreakdown.length > 0 ? (
-          <ul className="space-y-3">
-            {revenueBreakdown.map((entry) => (
-              <li key={entry.name} className="rounded-xl border border-slate-200/80 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold capitalize text-slate-900 dark:text-slate-100">{entry.name}</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {currencyFormatter.format(entry.amount)}
-                  </p>
-                </div>
+          {revenueBreakdown.length > 0 ? (
+            <ul className="space-y-3">
+              {revenueBreakdown.map((entry) => (
+                <li key={entry.name} className="rounded-xl border border-slate-200/80 bg-white/70 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {entry.displayName}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {entry.share > 0 ? `${entry.share.toFixed(1)}% of total revenue` : 'No revenue recorded for this stream'}
+                      </p>
+                    </div>
 
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500"
-                    style={{ width: `${Math.max(entry.share, 3)}%` }}
-                  />
-                </div>
-
-                {Object.keys(entry.categories).length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {Object.entries(entry.categories).map(([category, amount]) => (
-                      <span
-                        key={`${entry.name}-${category}`}
-                        className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                      >
-                        <span className="capitalize">{category}</span>
-                        <span className="font-semibold">{compactNumberFormatter.format(amount)}</span>
-                      </span>
-                    ))}
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {currencyFormatter.format(entry.amount)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {entry.categories.length} {entry.categories.length === 1 ? 'category' : 'categories'}
+                      </p>
+                    </div>
                   </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            No revenue breakdown records available.
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500"
+                        style={{ width: `${Math.min(Math.max(entry.share, 0), 100)}%` }}
+                      />
+                    </div>
+                    <span className="w-12 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                      {entry.share.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {entry.categories.length > 0 ? (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {entry.categories.map((category) => (
+                        <div
+                          key={`${entry.name}-${category.name}`}
+                          className="flex items-center justify-between rounded-lg bg-slate-100/80 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                          <span>{category.displayName}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                            {currencyFormatter.format(category.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      No category-level breakdown available.
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              No revenue breakdown records available.
+            </div>
+          )}
+        </article>
+
+        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-4')}>
+          <header className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">Activity Logs</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Recent sessions from /api/auth/sessions/list</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadOverview(true)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              aria-label="Refresh activity logs"
+            >
+              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+            </button>
+          </header>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              Total: {numberFormatter.format(sessionSummary.total)}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+              Active: {numberFormatter.format(sessionSummary.active)}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+              Revoked: {numberFormatter.format(sessionSummary.revoked)}
+            </span>
+            {sessionSummary.current > 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                Current: {numberFormatter.format(sessionSummary.current)}
+              </span>
+            ) : null}
           </div>
-        )}
+
+          {recentSessionLogs.length > 0 ? (
+            <ul className="max-h-[430px] space-y-2 overflow-y-auto pr-1">
+              {recentSessionLogs.map((session) => {
+                const activityTime = session.updatedAt || session.createdAt
+                return (
+                  <li
+                    key={session.id}
+                    className="rounded-xl border border-slate-200/80 bg-white/70 p-3 transition-colors hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-900/60"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <Monitor className="h-3.5 w-3.5 text-blue-500" />
+                          {session.device.toUpperCase()} session
+                        </p>
+                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                          IP: {normalizeSessionIp(session.ip)}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {session.current ? (
+                          <span className="rounded-md bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                            Current
+                          </span>
+                        ) : null}
+                        {session.active ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                            <ShieldCheck className="h-3 w-3" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+                            <ShieldX className="h-3 w-3" />
+                            Revoked
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock3 className="h-3 w-3" />
+                        {formatSessionAge(activityTime)}
+                      </span>
+                      <span>{formatSessionDateTime(activityTime)}</span>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              No activity logs available yet.
+            </div>
+          )}
+        </article>
       </section>
     </>
   )

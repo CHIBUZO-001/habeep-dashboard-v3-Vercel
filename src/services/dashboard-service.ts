@@ -92,8 +92,25 @@ function normalizeRevenueBreakdownItem(item: unknown): DashboardRevenueBreakdown
     return null
   }
 
-  const nestedCandidate = Object.values(source).find((value) => Boolean(toObject(value)))
-  const bucketSource = toObject(nestedCandidate) ?? source
+  const hasBucketFields =
+    Object.prototype.hasOwnProperty.call(source, 'name') ||
+    Object.prototype.hasOwnProperty.call(source, 'amount') ||
+    Object.prototype.hasOwnProperty.call(source, 'categories')
+
+  const nestedCandidate = Object.values(source).find((value) => {
+    const nestedSource = toObject(value)
+    if (!nestedSource) {
+      return false
+    }
+
+    return (
+      Object.prototype.hasOwnProperty.call(nestedSource, 'name') ||
+      Object.prototype.hasOwnProperty.call(nestedSource, 'amount') ||
+      Object.prototype.hasOwnProperty.call(nestedSource, 'categories')
+    )
+  })
+
+  const bucketSource = (hasBucketFields ? source : null) ?? toObject(nestedCandidate) ?? source
   const categoriesSource = toObject(bucketSource.categories)
 
   const categories: Record<string, number> = {}

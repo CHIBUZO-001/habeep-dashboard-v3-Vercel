@@ -8,6 +8,8 @@ import { login } from '../../services'
 import { ThemeToggle } from '../theme/theme-toggle'
 import { useToast } from '../ui/toast-provider'
 
+const REMEMBER_ME_PREFERENCE_KEY = 'habeep-remember-me'
+
 type LoginPageProps = {
   onBackToDashboard: () => void
   onLoginSuccess: () => void
@@ -17,7 +19,13 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
   const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
+  const [rememberMe, setRememberMe] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
+    }
+
+    return window.localStorage.getItem(REMEMBER_ME_PREFERENCE_KEY) !== 'false'
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -147,7 +155,11 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    setRememberMe(checked)
+                    window.localStorage.setItem(REMEMBER_ME_PREFERENCE_KEY, String(checked))
+                  }}
                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600"
                 />
                 Remember me

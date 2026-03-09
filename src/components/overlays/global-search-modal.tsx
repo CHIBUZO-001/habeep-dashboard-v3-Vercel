@@ -20,10 +20,10 @@ type GlobalSearchModalProps = {
 
 const quickEntities: SearchResult[] = [
   {
-    id: 'entity-guest-risk',
+    id: 'entity-tenant-risk',
     title: 'Amina Johnson',
-    subtitle: 'Guest · Risk flagged',
-    menuId: 'guests-all',
+    subtitle: 'Tenant · Risk flagged',
+    menuId: 'user-management-tenants',
     icon: User,
   },
   {
@@ -131,7 +131,7 @@ export function GlobalSearchModal({ open, onClose, onNavigateToMenu }: GlobalSea
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search pages, guests, hosts..."
+            placeholder="Search pages, users, tenants..."
             className="h-9 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
             aria-label="Global search"
           />

@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
 
-import { API_BASE_URL } from '../config/env'
+import { API_BASE_URL, ENABLE_NGROK_BYPASS } from '../config/env'
 import { clearSession, getAccessToken, getSession, updateSessionTokens } from './session'
 
 const REFRESH_PATH = '/api/auth/refresh'
@@ -15,7 +15,7 @@ export const httpClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    [NGROK_BYPASS_HEADER]: 'true',
+    ...(ENABLE_NGROK_BYPASS ? { [NGROK_BYPASS_HEADER]: 'true' } : {}),
   },
 })
 
@@ -25,7 +25,7 @@ const refreshClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    [NGROK_BYPASS_HEADER]: 'true',
+    ...(ENABLE_NGROK_BYPASS ? { [NGROK_BYPASS_HEADER]: 'true' } : {}),
   },
 })
 
@@ -130,7 +130,9 @@ httpClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
 
-  config.headers[NGROK_BYPASS_HEADER] = 'true'
+  if (ENABLE_NGROK_BYPASS) {
+    config.headers[NGROK_BYPASS_HEADER] = 'true'
+  }
 
   return config
 })

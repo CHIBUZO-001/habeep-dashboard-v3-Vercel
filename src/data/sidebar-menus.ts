@@ -11,8 +11,7 @@ import {
   Settings2,
   ShieldCheck,
   Users,
-} from 'lucide-react'
-
+} from 'lucide-react' 
 export type SidebarSubItem = {
   id: string
   label: string
@@ -50,23 +49,23 @@ export const sidebarGroups: SidebarGroup[] = [
         ],
       },
       {
-        id: 'guests',
-        label: 'Guests',
-        href: '/dashboard/guests',
+        id: 'user-management',
+        label: 'User Management',
+        href: '/dashboard/user-management',
         icon: Users,
         children: [
-          { id: 'guests-all', label: 'All Guests', href: '/dashboard/guests' },
-          { id: 'guests-kyc', label: 'KYC Pending', href: '/dashboard/guests?kyc=pending' },
+          { id: 'user-management-users', label: 'Users', href: '/dashboard/user-management/users' },
+          { id: 'user-management-tenants', label: 'Tenants', href: '/dashboard/user-management/tenants' },
         ],
       },
       {
-        id: 'hosts',
-        label: 'Hosts',
-        href: '/dashboard/hosts',
+        id: 'properties',
+        label: 'Properties',
+        href: '/dashboard/properties',
         icon: House,
         children: [
-          { id: 'hosts-all', label: 'All Hosts', href: '/dashboard/hosts' },
-          { id: 'hosts-risk', label: 'Risk Queue', href: '/dashboard/hosts?risk=high' },
+          { id: 'properties-overview', label: 'Overview', href: '/dashboard/properties' },
+          { id: 'properties-analytics', label: 'Analytics', href: '/dashboard/properties/analytics' },
         ],
       },
       {
