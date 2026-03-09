@@ -27,6 +27,7 @@ import {
   formatCurrencyValue,
   formatPercentageValue,
   numberFormatter,
+  responsiveChartInitialDimension,
   responsiveChartMinHeight,
 } from './shared'
 
@@ -382,7 +383,12 @@ export function LocationPerformanceChart({
           </div>
 
           <div className="mt-4 h-[18rem] sm:h-80">
-            <ResponsiveContainer width="100%" height="100%" minHeight={responsiveChartMinHeight}>
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minHeight={responsiveChartMinHeight}
+              initialDimension={responsiveChartInitialDimension}
+            >
               <RadarChart data={radarData} outerRadius={isMobileViewport ? '62%' : '70%'}>
                 <PolarGrid stroke="#cbd5e1" />
                 <PolarAngleAxis dataKey="metric" tick={{ fill: '#64748b', fontSize: isMobileViewport ? 11 : 12 }} />
@@ -602,7 +608,12 @@ export function PriceBandsChart({ items }: { items: PropertyAnalyticsDashboard['
 
       <div className="rounded-[1.75rem] border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-3 shadow-sm shadow-slate-900/5 dark:border-slate-800 dark:from-slate-950/50 dark:to-slate-900/30">
         <div className="h-[18rem] sm:h-80">
-          <ResponsiveContainer width="100%" height="100%" minHeight={responsiveChartMinHeight}>
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minHeight={responsiveChartMinHeight}
+            initialDimension={responsiveChartInitialDimension}
+          >
             <ComposedChart
               data={chartData}
               margin={{ top: 14, right: isMobileViewport ? 0 : 12, left: isMobileViewport ? -20 : -12, bottom: 8 }}

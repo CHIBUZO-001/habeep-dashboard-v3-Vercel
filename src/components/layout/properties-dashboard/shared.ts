@@ -12,6 +12,10 @@ export const percentageFormatter = new Intl.NumberFormat('en-NG', {
 export const surfaceCardClass =
   'rounded-2xl border border-slate-200/85 bg-white/90 p-4 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 transition-colors dark:border-slate-800/80 dark:bg-slate-900/90 dark:ring-slate-800/80'
 export const responsiveChartMinHeight = 280
+export const responsiveChartInitialDimension = {
+  width: 520,
+  height: responsiveChartMinHeight,
+} as const
 export const ALL_LOCATIONS_ID = '__all_locations__'
 
 export const emptyPropertyAnalyticsDashboard: PropertyAnalyticsDashboard = {

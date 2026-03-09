@@ -27,6 +27,7 @@ import {
   formatPropertyLabel,
   getAnalyticsBucketSortOrder,
   numberFormatter,
+  responsiveChartInitialDimension,
   responsiveChartMinHeight,
   surfaceCardClass,
 } from './shared'
@@ -297,7 +298,12 @@ export function AnalyticsDashboardView({
             />
           ) : (
             <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%" minHeight={responsiveChartMinHeight}>
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minHeight={responsiveChartMinHeight}
+                initialDimension={responsiveChartInitialDimension}
+              >
                 <LineChart data={analyticsTrendData} margin={{ top: 12, right: 12, left: -14, bottom: 6 }}>
                   <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
@@ -348,7 +354,12 @@ export function AnalyticsDashboardView({
             <>
               <div className="mt-4 min-w-0 overflow-x-auto pb-2">
                 <div className="h-72 min-h-[280px]" style={{ width: `max(100%, ${typeDistributionChartMinWidth}px)` }}>
-                  <ResponsiveContainer width="100%" height="100%" minHeight={responsiveChartMinHeight}>
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                    minHeight={responsiveChartMinHeight}
+                    initialDimension={responsiveChartInitialDimension}
+                  >
                     <BarChart
                       data={analyticsTypeDistribution.map((item) => ({
                         name: formatPropertyLabel(item.type),
