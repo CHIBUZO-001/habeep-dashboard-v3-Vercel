@@ -14,6 +14,7 @@ import { NotificationsDrawer, type DashboardNotification } from '../overlays/not
 import { useToast } from '../ui/toast-provider'
 import { DashboardActivityLogs } from './dashboard-activity-logs'
 import { DashboardOverview } from './dashboard-overview'
+import { DashboardPerformance } from './dashboard-performance'
 import { DashboardProperties } from './dashboard-properties'
 import { DashboardSidebar } from './dashboard-sidebar'
 import { DashboardTopbar, type ProfileAction } from './dashboard-topbar'
@@ -157,6 +158,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const isUserManagementTenantsPage = activeRoute === '/dashboard/user-management/tenants'
   const isPropertiesOverviewPage = activeRoute === '/dashboard/properties'
   const isPropertiesAnalyticsPage = activeRoute === '/dashboard/properties/analytics'
+  const isPerformancePage = activeRoute === '/dashboard/performance'
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
     [notifications],
@@ -345,6 +347,8 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                     <DashboardProperties section="overview" />
                   ) : isPropertiesAnalyticsPage ? (
                     <DashboardProperties section="analytics" />
+                  ) : isPerformancePage ? (
+                    <DashboardPerformance />
                   ) : (
                     <section className="dashboard-enter dashboard-enter-delay-1 rounded-2xl border border-slate-200/90 bg-white/80 p-6 text-sm shadow-sm shadow-slate-900/5 ring-1 ring-white/80 dark:border-slate-800/90 dark:bg-slate-900/80 dark:ring-slate-800/80">
                       <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{activeLabel}</h3>
