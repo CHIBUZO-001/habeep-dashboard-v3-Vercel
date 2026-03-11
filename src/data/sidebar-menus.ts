@@ -2,16 +2,18 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Activity,
   BookCheck,
-  Building2,
+  BookOpenText,
+  CalendarDays,
   CircleDollarSign,
+  ClipboardList,
   House,
   LayoutDashboard,
   LifeBuoy,
   MessageSquareText,
+  PenSquare,
   Settings2,
-  ShieldCheck,
   Users,
-} from 'lucide-react' 
+} from 'lucide-react'
 export type SidebarSubItem = {
   id: string
   label: string
@@ -56,6 +58,8 @@ export const sidebarGroups: SidebarGroup[] = [
         children: [
           { id: 'user-management-users', label: 'Users', href: '/dashboard/user-management/users' },
           { id: 'user-management-tenants', label: 'Tenants', href: '/dashboard/user-management/tenants' },
+          { id: 'user-management-agents', label: 'Agents', href: '/dashboard/user-management/agents' },
+          { id: 'user-management-landlords', label: 'Landlords', href: '/dashboard/user-management/landlords' },
         ],
       },
       {
@@ -69,17 +73,6 @@ export const sidebarGroups: SidebarGroup[] = [
         ],
       },
       {
-        id: 'shortlets',
-        label: 'Shortlets',
-        href: '/dashboard/shortlets',
-        icon: Building2,
-        badge: '12',
-        children: [
-          { id: 'shortlets-all', label: 'All Listings', href: '/dashboard/shortlets' },
-          { id: 'shortlets-review', label: 'Pending Review', href: '/dashboard/shortlets?status=review' },
-        ],
-      },
-      {
         id: 'finance',
         label: 'Finances',
         href: '/dashboard/finances',
@@ -89,15 +82,35 @@ export const sidebarGroups: SidebarGroup[] = [
           { id: 'finance-refunds', label: 'Refunds & Payouts', href: '/dashboard/finances/refunds' },
         ],
       },
+    ],
+  },
+  {
+    id: 'work-management',
+    label: 'Work Management',
+    items: [
       {
-        id: 'compliance',
-        label: 'Compliance',
-        href: '/dashboard/compliance',
-        icon: ShieldCheck,
-        children: [
-          { id: 'compliance-overview', label: 'Overview', href: '/dashboard/compliance' },
-          { id: 'compliance-risk', label: 'Risk Flags', href: '/dashboard/compliance/risk-flags' },
-        ],
+        id: 'tasks',
+        label: 'Tasks',
+        href: '/dashboard/tasks',
+        icon: ClipboardList,
+      },
+      {
+        id: 'calendar',
+        label: 'Calendar',
+        href: '/dashboard/calendar',
+        icon: CalendarDays,
+      },
+      {
+        id: 'post',
+        label: 'Post',
+        href: '/dashboard/post',
+        icon: PenSquare,
+      },
+      {
+        id: 'blog',
+        label: 'Blog',
+        href: '/dashboard/blog',
+        icon: BookOpenText,
       },
     ],
   },

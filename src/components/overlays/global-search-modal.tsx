@@ -1,4 +1,4 @@
-import { Building2, Search, ShieldCheck, User, X } from 'lucide-react'
+import { Search, User, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { sidebarGroups } from '../../data/sidebar-menus'
@@ -25,20 +25,6 @@ const quickEntities: SearchResult[] = [
     subtitle: 'Tenant · Risk flagged',
     menuId: 'user-management-tenants',
     icon: User,
-  },
-  {
-    id: 'entity-shortlet-review',
-    title: 'Lekki Apartment 23',
-    subtitle: 'Shortlet · Pending review',
-    menuId: 'shortlets-review',
-    icon: Building2,
-  },
-  {
-    id: 'entity-compliance',
-    title: 'Risk Queue',
-    subtitle: 'Compliance · 9 unresolved flags',
-    menuId: 'compliance-risk',
-    icon: ShieldCheck,
   },
 ]
 

@@ -2,6 +2,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
 :root {
   font-family: Inter, "Segoe UI", Arial, sans-serif;
 }

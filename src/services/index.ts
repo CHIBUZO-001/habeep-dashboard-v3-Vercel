@@ -36,9 +36,24 @@ export {
 export {
   getUserBaseSummary,
   getUserBaseList,
+  getTenantsSummary,
+  getAgentsSummary,
+  getLandlordsSummary,
+  getLandlordsList,
+  getAgentsList,
+  getTenantsList,
   type UserBaseSummary,
   type UserBaseList,
   type UserBaseListItem,
+  type TenantsSummary,
+  type AgentsSummary,
+  type LandlordsSummary,
+  type LandlordsList,
+  type LandlordsListItem,
+  type AgentsList,
+  type AgentsListItem,
+  type TenantsList,
+  type TenantsListItem,
 } from './user-management-service'
 export {
   getPropertyAnalyticsDashboard,
@@ -58,6 +73,19 @@ export {
   type PropertyListItem,
   type PropertyImageAsset,
 } from './properties-service'
+export {
+  getAdminTasks,
+  createAdminTask,
+  updateAdminTask,
+  deleteAdminTask,
+  lockAdminTask,
+  unlockAdminTask,
+  type AdminTask,
+  type AdminTaskPriority,
+  type AdminTaskStatus,
+  type CreateAdminTaskPayload,
+  type UpdateAdminTaskPayload,
+} from './tasks-service'
 export {
   apiGet,
   apiPost,
