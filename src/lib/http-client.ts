@@ -211,16 +211,96 @@ export async function httpDelete<TResponse>(url: string, config?: AxiosRequestCo
 }
 
 type ApiErrorPayload = {
-  message?: string
+  message?: string | string[]
   error?: string
-  errors?: Array<{ message?: string }>
+  errors?: unknown
+  details?: unknown
+  data?: unknown
 }
 
 export function getApiErrorMessage(error: unknown, fallback = 'Request failed. Try again.') {
   if (axios.isAxiosError<ApiErrorPayload>(error)) {
     const payload = error.response?.data
-    const firstValidationError = payload?.errors?.[0]?.message
-    return firstValidationError || payload?.message || payload?.error || fallback
+
+    const messages: string[] = []
+
+    const extractErrors = (errors: unknown) => {
+      const extracted: string[] = []
+
+      if (Array.isArray(errors)) {
+        for (const entry of errors) {
+          if (typeof entry === 'string' && entry.trim()) {
+            extracted.push(entry.trim())
+            continue
+          }
+
+          const node = toObject(entry)
+          const messageValue = typeof node?.message === 'string' ? node.message.trim() : ''
+          if (messageValue) {
+            extracted.push(messageValue)
+          }
+        }
+
+        return extracted
+      }
+
+      const errorMap = toObject(errors)
+      if (!errorMap) {
+        return extracted
+      }
+
+      for (const [field, value] of Object.entries(errorMap)) {
+        if (typeof value === 'string' && value.trim()) {
+          extracted.push(`${field}: ${value.trim()}`)
+          continue
+        }
+
+        if (Array.isArray(value)) {
+          const firstText = value.find((item) => typeof item === 'string' && item.trim())
+          if (typeof firstText === 'string') {
+            extracted.push(`${field}: ${firstText.trim()}`)
+          }
+          continue
+        }
+
+        const node = toObject(value)
+        const messageValue = typeof node?.message === 'string' ? node.message.trim() : ''
+        if (messageValue) {
+          extracted.push(`${field}: ${messageValue}`)
+        }
+      }
+
+      return extracted
+    }
+
+    const pushUnique = (items: string[]) => {
+      for (const item of items) {
+        if (item && !messages.includes(item)) {
+          messages.push(item)
+        }
+      }
+    }
+
+    pushUnique(extractErrors(payload?.errors))
+
+    if (Array.isArray(payload?.message)) {
+      pushUnique(
+        payload.message
+          .filter((message): message is string => typeof message === 'string')
+          .map((message) => message.trim())
+          .filter(Boolean),
+      )
+    }
+
+    pushUnique(extractErrors(payload?.details))
+    pushUnique(extractErrors(payload?.data))
+
+    if (messages.length > 0) {
+      return messages.slice(0, 3).join(' · ')
+    }
+
+    const messageValue = typeof payload?.message === 'string' ? payload.message.trim() : ''
+    return messageValue || payload?.error || fallback
   }
 
   if (error instanceof Error && error.message) {
