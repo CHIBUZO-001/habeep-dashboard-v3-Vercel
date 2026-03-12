@@ -78,8 +78,9 @@ export const sidebarGroups: SidebarGroup[] = [
         href: '/dashboard/finances',
         icon: CircleDollarSign,
         children: [
-          { id: 'finance-overview', label: 'Overview', href: '/dashboard/finances' },
-          { id: 'finance-refunds', label: 'Refunds & Payouts', href: '/dashboard/finances/refunds' },
+          { id: 'finance-overview', label: 'Revenue', href: '/dashboard/finances' },
+          { id: 'finance-wallet', label: 'Wallet', href: '/dashboard/finances/wallet' },
+          { id: 'finance-offline-deposits', label: 'Offline Deposits', href: '/dashboard/finances/offline-deposits' },
         ],
       },
     ],

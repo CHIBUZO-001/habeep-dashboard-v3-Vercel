@@ -15,6 +15,7 @@ import { useToast } from '../ui/toast-provider'
 import { DashboardActivityLogs } from './dashboard-activity-logs'
 import { DashboardBlog } from './dashboard-blog'
 import { DashboardCalendar } from './dashboard-calendar'
+import { DashboardFinances } from './dashboard-finances'
 import { DashboardOverview } from './dashboard-overview'
 import { DashboardPerformance } from './dashboard-performance'
 import { DashboardPost } from './dashboard-post'
@@ -164,6 +165,9 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const isUserManagementLandlordsPage = activeRoute === '/dashboard/user-management/landlords'
   const isPropertiesOverviewPage = activeRoute === '/dashboard/properties'
   const isPropertiesAnalyticsPage = activeRoute === '/dashboard/properties/analytics'
+  const isFinancesRevenuePage = activeRoute === '/dashboard/finances'
+  const isFinancesWalletPage = activeRoute === '/dashboard/finances/wallet'
+  const isFinancesOfflineDepositsPage = activeRoute === '/dashboard/finances/offline-deposits'
   const isPerformancePage = activeRoute === '/dashboard/performance'
   const isTasksPage = activeRoute === '/dashboard/tasks'
   const isCalendarPage = activeRoute === '/dashboard/calendar'
@@ -361,6 +365,12 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                     <DashboardProperties section="overview" />
                   ) : isPropertiesAnalyticsPage ? (
                     <DashboardProperties section="analytics" />
+                  ) : isFinancesRevenuePage ? (
+                    <DashboardFinances section="revenue" />
+                  ) : isFinancesWalletPage ? (
+                    <DashboardFinances section="wallet" />
+                  ) : isFinancesOfflineDepositsPage ? (
+                    <DashboardFinances section="offline-deposits" />
                   ) : isPerformancePage ? (
                     <DashboardPerformance />
                   ) : isTasksPage ? (
