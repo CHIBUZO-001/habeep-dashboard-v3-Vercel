@@ -1,11 +1,7 @@
 import {
   Activity,
   Building2,
-  Clock3,
-  Monitor,
   RefreshCw,
-  ShieldCheck,
-  ShieldX,
   TrendingUp,
   Users,
   Wallet,
@@ -29,8 +25,6 @@ import {
   getDashboardGeoDistribution,
   getDashboardMetrics,
   getDashboardSummary,
-  listAuthSessions,
-  type AuthSessionLog,
   type DashboardGeoDistribution,
   type DashboardMetricPoint,
   type DashboardMetrics,
@@ -117,78 +111,10 @@ function calculateSeriesTrend(series: DashboardMetricPoint[]) {
   return ((latestValue - previousValue) / Math.abs(previousValue)) * 100
 }
 
-function formatSessionDateTime(inputDate: string) {
-  const parsedDate = new Date(inputDate)
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'Unknown time'
-  }
-
-  return parsedDate.toLocaleString('en-NG', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatSessionAge(inputDate: string) {
-  const parsedDate = new Date(inputDate)
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'N/A'
-  }
-
-  const differenceMs = Date.now() - parsedDate.getTime()
-  if (differenceMs < 60_000) {
-    return 'just now'
-  }
-
-  const differenceMinutes = Math.floor(differenceMs / 60_000)
-  if (differenceMinutes < 60) {
-    return `${differenceMinutes}m ago`
-  }
-
-  const differenceHours = Math.floor(differenceMinutes / 60)
-  if (differenceHours < 24) {
-    return `${differenceHours}h ago`
-  }
-
-  const differenceDays = Math.floor(differenceHours / 24)
-  if (differenceDays < 30) {
-    return `${differenceDays}d ago`
-  }
-
-  const differenceMonths = Math.floor(differenceDays / 30)
-  if (differenceMonths < 12) {
-    return `${differenceMonths}mo ago`
-  }
-
-  const differenceYears = Math.floor(differenceMonths / 12)
-  return `${differenceYears}y ago`
-}
-
-function normalizeSessionIp(ip: string) {
-  return ip.replace('::ffff:', '')
-}
-
-function getSessionSortTime(session: AuthSessionLog) {
-  const updatedAtMs = new Date(session.updatedAt).getTime()
-  if (!Number.isNaN(updatedAtMs)) {
-    return updatedAtMs
-  }
-
-  const createdAtMs = new Date(session.createdAt).getTime()
-  if (!Number.isNaN(createdAtMs)) {
-    return createdAtMs
-  }
-
-  return 0
-}
-
 export function DashboardOverview() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [geoDistribution, setGeoDistribution] = useState<DashboardGeoDistribution | null>(null)
-  const [sessionLogs, setSessionLogs] = useState<AuthSessionLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { toast } = useToast()
@@ -198,17 +124,15 @@ export function DashboardOverview() {
       setIsLoading(true)
 
       try {
-        const [summaryData, metricsData, geoDistributionData, sessionLogsData] = await Promise.all([
+        const [summaryData, metricsData, geoDistributionData] = await Promise.all([
           getDashboardSummary(),
           getDashboardMetrics(),
           getDashboardGeoDistribution(),
-          listAuthSessions().catch(() => []),
         ])
 
         setSummary(summaryData)
         setMetrics(metricsData)
         setGeoDistribution(geoDistributionData)
-        setSessionLogs(sessionLogsData)
         setErrorMessage(null)
       } catch (error) {
         const message = getApiErrorMessage(error, 'Failed to load dashboard overview.')
@@ -343,23 +267,6 @@ export function DashboardOverview() {
       })
       .sort((leftRow, rightRow) => rightRow.amount - leftRow.amount)
   }, [summary])
-
-  const recentSessionLogs = useMemo(() => {
-    return [...sessionLogs].sort((leftSession, rightSession) => getSessionSortTime(rightSession) - getSessionSortTime(leftSession)).slice(0, 12)
-  }, [sessionLogs])
-
-  const sessionSummary = useMemo(() => {
-    const activeCount = sessionLogs.filter((session) => session.active).length
-    const revokedCount = sessionLogs.filter((session) => !session.active).length
-    const currentCount = sessionLogs.filter((session) => session.current).length
-
-    return {
-      total: sessionLogs.length,
-      active: activeCount,
-      revoked: revokedCount,
-      current: currentCount,
-    }
-  }, [sessionLogs])
 
   return (
     <>
@@ -530,7 +437,7 @@ export function DashboardOverview() {
         </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
+      <section className="grid gap-4">
         <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-4')}>
           <header className="mb-4 flex items-center justify-between">
             <div>
@@ -606,97 +513,6 @@ export function DashboardOverview() {
           ) : (
             <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
               No revenue breakdown records available.
-            </div>
-          )}
-        </article>
-
-        <article className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-4')}>
-          <header className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold">Activity Logs</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Recent sessions from /api/auth/sessions/list</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void loadOverview(true)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-              aria-label="Refresh activity logs"
-            >
-              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-            </button>
-          </header>
-
-          <div className="mb-3 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              Total: {numberFormatter.format(sessionSummary.total)}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
-              Active: {numberFormatter.format(sessionSummary.active)}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
-              Revoked: {numberFormatter.format(sessionSummary.revoked)}
-            </span>
-            {sessionSummary.current > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
-                Current: {numberFormatter.format(sessionSummary.current)}
-              </span>
-            ) : null}
-          </div>
-
-          {recentSessionLogs.length > 0 ? (
-            <ul className="max-h-[430px] space-y-2 overflow-y-auto pr-1">
-              {recentSessionLogs.map((session) => {
-                const activityTime = session.updatedAt || session.createdAt
-                return (
-                  <li
-                    key={session.id}
-                    className="rounded-xl border border-slate-200/80 bg-white/70 p-3 transition-colors hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-900/60"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          <Monitor className="h-3.5 w-3.5 text-blue-500" />
-                          {session.device.toUpperCase()} session
-                        </p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-                          IP: {normalizeSessionIp(session.ip)}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        {session.current ? (
-                          <span className="rounded-md bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
-                            Current
-                          </span>
-                        ) : null}
-                        {session.active ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
-                            <ShieldCheck className="h-3 w-3" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
-                            <ShieldX className="h-3 w-3" />
-                            Revoked
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                      <span className="inline-flex items-center gap-1">
-                        <Clock3 className="h-3 w-3" />
-                        {formatSessionAge(activityTime)}
-                      </span>
-                      <span>{formatSessionDateTime(activityTime)}</span>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              No activity logs available yet.
             </div>
           )}
         </article>

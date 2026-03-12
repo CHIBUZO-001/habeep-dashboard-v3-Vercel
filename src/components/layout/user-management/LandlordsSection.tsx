@@ -223,9 +223,7 @@ export function LandlordsSection({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Landlord Summary</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/admin/users/landlords/summary</span>
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from landlords summary.</p>
           </div>
           <button
             type="button"
@@ -271,9 +269,7 @@ export function LandlordsSection({
         <header className="flex flex-col gap-4 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800/70">
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Landlords Directory</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/admin/users/landlords/list</span>
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from landlords list.</p>
           </div>
           <button
             type="button"

@@ -189,6 +189,24 @@ export function findMenuById(id: string): ActiveMenuMatch | null {
   return null
 }
 
+export function findMenuIdByHref(href: string): string | null {
+  for (const group of sidebarGroups) {
+    for (const item of group.items) {
+      for (const child of item.children ?? []) {
+        if (child.href === href) {
+          return child.id
+        }
+      }
+
+      if (item.href === href) {
+        return item.id
+      }
+    }
+  }
+
+  return null
+}
+
 export function getDefaultMenuId() {
   const firstGroup = sidebarGroups[0]
   const firstItem = firstGroup?.items[0]

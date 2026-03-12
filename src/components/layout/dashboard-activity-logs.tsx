@@ -279,9 +279,7 @@ export function DashboardActivityLogs() {
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Activity Timeline</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Derived from <span className="font-mono">/api/auth/sessions/list</span>
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Derived from sessions list.</p>
           </div>
           <button
             type="button"

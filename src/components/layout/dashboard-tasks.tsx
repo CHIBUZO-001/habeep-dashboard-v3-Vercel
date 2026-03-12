@@ -470,7 +470,7 @@ export function DashboardTasks() {
               Tasks
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Derived from <span className="font-mono">/api/admin/tasks</span>
+              Derived from tasks list.
             </p>
           </div>
 

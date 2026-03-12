@@ -33,7 +33,14 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!email || !password) {
+    const formData = new FormData(event.currentTarget)
+    const nextEmail = String(formData.get('username') ?? '').trim()
+    const nextPassword = String(formData.get('password') ?? '')
+
+    setEmail(nextEmail)
+    setPassword(nextPassword)
+
+    if (!nextEmail || !nextPassword) {
       setErrorMessage('Enter your email and password to continue.')
       return
     }
@@ -43,8 +50,8 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
 
     try {
       const session = await login({
-        email: email.trim(),
-        password,
+        email: nextEmail,
+        password: nextPassword,
       })
 
       saveSession(session, rememberMe)
@@ -91,7 +98,7 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sign in to Habeep Dashboard</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               {errorMessage ? (
                 <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
                   {errorMessage}
@@ -104,7 +111,12 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
                   <Mail className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400" />
                   <input
                     type="email"
-                    autoComplete="email"
+                    id="login-username"
+                    name="username"
+                    autoComplete="username"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     placeholder="you@habeep.com"
                     value={email}
                     onChange={(event) => {
@@ -126,6 +138,8 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
                   <Lock className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    id="login-password"
+                    name="password"
                     autoComplete="current-password"
                     placeholder="Enter your password"
                     value={password}
@@ -168,7 +182,7 @@ export function LoginPage({ onBackToDashboard, onLoginSuccess }: LoginPageProps)
               <button
                 type="submit"
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-                disabled={isSubmitting || !email || !password}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
                 <ArrowRight className="h-4 w-4" />

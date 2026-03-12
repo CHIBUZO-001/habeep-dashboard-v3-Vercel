@@ -175,7 +175,7 @@ export function BlogCreateModal({
               Create blog
             </h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Posts to <span className="font-mono">/api/content/blogs/create</span>.
+              Creates a blog post.
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { findMenuById, getDefaultMenuId } from '../../data/sidebar-menus'
+import { findMenuById, findMenuIdByHref, getDefaultMenuId } from '../../data/sidebar-menus'
 import { cn } from '../../lib/cn'
 import { getApiErrorMessage } from '../../lib/http-client'
 import { clearSession, getSession } from '../../lib/session'
@@ -26,6 +26,41 @@ import { DashboardTopbar, type ProfileAction } from './dashboard-topbar'
 import { DashboardUserManagement } from './dashboard-user-management'
 
 const SIDEBAR_STORAGE_KEY = 'habeep-sidebar-open'
+
+function getPathWithSearch() {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  return `${window.location.pathname}${window.location.search}`
+}
+
+function resolveMenuIdFromLocation() {
+  if (typeof window === 'undefined') {
+    return getDefaultMenuId()
+  }
+
+  const fullPath = getPathWithSearch()
+  return findMenuIdByHref(fullPath) ?? findMenuIdByHref(window.location.pathname) ?? getDefaultMenuId()
+}
+
+function navigateTo(path: string, replace = false) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const currentPath = getPathWithSearch()
+  if (currentPath === path) {
+    return
+  }
+
+  if (replace) {
+    window.history.replaceState({}, '', path)
+    return
+  }
+
+  window.history.pushState({}, '', path)
+}
 
 function getInitialErrorCode(): AppErrorCode | null {
   if (typeof window === 'undefined') {
@@ -109,7 +144,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [automationModalOpen, setAutomationModalOpen] = useState(false)
-  const [activeId, setActiveId] = useState(getDefaultMenuId)
+  const [activeId, setActiveId] = useState(resolveMenuIdFromLocation)
   const [appErrorCode, setAppErrorCode] = useState<AppErrorCode | null>(getInitialErrorCode)
   const [notifications, setNotifications] = useState<DashboardNotification[]>([])
   const { toast } = useToast()
@@ -153,6 +188,18 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
     }
   }, [hasOverlayOpen])
 
+  useEffect(() => {
+    const handlePopstate = () => {
+      setActiveId(resolveMenuIdFromLocation())
+      setAppErrorCode(getInitialErrorCode())
+    }
+
+    window.addEventListener('popstate', handlePopstate)
+    return () => {
+      window.removeEventListener('popstate', handlePopstate)
+    }
+  }, [])
+
   const activeMenu = useMemo(() => findMenuById(activeId), [activeId])
   const activeGroupLabel = activeMenu?.groupLabel ?? 'Platform'
   const activeLabel = activeMenu?.child?.label ?? activeMenu?.item.label ?? 'Dashboard'
@@ -180,9 +227,16 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const activeErrorPage = appErrorCode ? errorPageByCode[appErrorCode] : null
 
   const handleMenuSelect = (menuId: string) => {
+    const nextMenu = findMenuById(menuId)
+    const nextRoute = nextMenu?.child?.href ?? nextMenu?.item.href
+
     setActiveId(menuId)
     setAppErrorCode(null)
     clearErrorQueryParam()
+
+    if (nextRoute) {
+      navigateTo(nextRoute)
+    }
   }
 
   const handleProfileAction = async (action: ProfileAction) => {
@@ -330,7 +384,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                    <div className="mt-4 hidden flex-wrap gap-2 text-xs md:flex">
                       <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
                         Group: {activeGroupLabel}
                       </span>

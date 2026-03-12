@@ -181,9 +181,7 @@ export function AgentsSection({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Agent Summary</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/admin/users/agents/summary</span>
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from agents summary.</p>
           </div>
           <button
             type="button"
@@ -230,7 +228,7 @@ export function AgentsSection({
           <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Agents Directory</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/admin/users/agents/list</span>
+              Snapshot from agents list.
             </p>
           </div>
           <button

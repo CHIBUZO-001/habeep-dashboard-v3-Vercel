@@ -214,7 +214,7 @@ export function OverviewDashboardView({
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Property Metrics</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/properties/metrics</span>
+              Snapshot from property metrics.
             </p>
           </div>
           <button

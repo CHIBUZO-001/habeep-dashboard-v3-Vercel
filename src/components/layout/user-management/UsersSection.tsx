@@ -106,9 +106,7 @@ export function UsersSection({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">User Summary</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Snapshot from <span className="font-mono">/api/admin/users/base/summary</span>
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from users summary.</p>
           </div>
           <button
             type="button"
@@ -156,7 +154,7 @@ export function UsersSection({
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {totalUsers > 0
                 ? `Showing ${numberFormatter.format(pageStart)}-${numberFormatter.format(pageEnd)} of ${numberFormatter.format(totalUsers)} users`
-                : 'Snapshot from /api/admin/users/base/list'}
+                : 'Snapshot from users list'}
             </p>
           </div>
           <button
@@ -409,4 +407,3 @@ export function UsersSection({
     </div>
   )
 }
-

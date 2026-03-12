@@ -1,4 +1,4 @@
-import { Clock3, CreditCard, RefreshCw, Search, TrendingUp, UserCircle2, Wallet } from 'lucide-react'
+import { Clock3, CreditCard, RefreshCw, Search, TrendingUp, UserCircle2, Wallet, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '../../lib/cn'
@@ -92,8 +92,28 @@ export function DashboardFinancesOfflineDeposits() {
   const [offlineSearchQuery, setOfflineSearchQuery] = useState('')
   const [offlineStatusFilter, setOfflineStatusFilter] = useState<'all' | 'pending' | 'verified' | 'denied'>('all')
   const [offlineTypeFilter, setOfflineTypeFilter] = useState('all')
+  const [proofViewer, setProofViewer] = useState<{ url: string; title: string; mimeType: string | null } | null>(
+    null,
+  )
 
   const { toast } = useToast()
+
+  useEffect(() => {
+    if (!proofViewer) {
+      return
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProofViewer(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [proofViewer])
 
   const loadOfflineDepositsSummary = useCallback(
     async (showErrorToast = false) => {
@@ -269,8 +289,79 @@ export function DashboardFinancesOfflineDeposits() {
   const hasOfflineSummary = Boolean(offlineDepositsSummary)
   const isOfflineRefreshing = isOfflineDepositsLoading || isOfflineDepositsActivitiesLoading
 
+  const proofViewerIsImage = useMemo(() => {
+    if (!proofViewer) {
+      return false
+    }
+
+    const mimeType = proofViewer.mimeType?.toLowerCase() ?? ''
+    if (mimeType.startsWith('image/')) {
+      return true
+    }
+
+    const url = proofViewer.url.trim().toLowerCase()
+    return (
+      url.startsWith('data:image/') ||
+      url.endsWith('.png') ||
+      url.endsWith('.jpg') ||
+      url.endsWith('.jpeg') ||
+      url.endsWith('.webp') ||
+      url.endsWith('.gif') ||
+      url.endsWith('.svg')
+    )
+  }, [proofViewer])
+
   return (
     <div className="space-y-6">
+      {proofViewer ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-6">
+          <div
+            className="fixed inset-0 bg-slate-950/55 backdrop-blur-[2px]"
+            onClick={() => setProofViewer(null)}
+            aria-hidden="true"
+          />
+
+          <div
+            className="relative z-10 flex max-h-[calc(95dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:w-[min(96vw,56rem)]"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Proof viewer"
+          >
+            <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{proofViewer.title}</h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preview document proof.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setProofViewer(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                aria-label="Close proof viewer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              {proofViewerIsImage ? (
+                <img
+                  src={proofViewer.url}
+                  alt={proofViewer.title}
+                  className="mx-auto max-h-[75dvh] w-full rounded-xl object-contain"
+                />
+              ) : (
+                <iframe
+                  title={proofViewer.title}
+                  src={proofViewer.url}
+                  className="h-[75dvh] w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="dashboard-enter flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Offline Deposits</h3>
@@ -503,11 +594,141 @@ export function DashboardFinancesOfflineDeposits() {
           </div>
         </header>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/80">
+        <div className="mt-4 space-y-3 lg:hidden">
+          {offlineDepositsActivitiesErrorMessage && offlineDepositsActivities.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 text-sm text-slate-600 shadow-sm shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-950/30 dark:text-slate-300">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Offline deposits unavailable</p>
+              <p className="mt-2">{offlineDepositsActivitiesErrorMessage}</p>
+              <button
+                type="button"
+                onClick={() => void loadOfflineDeposits(true, offlineDepositsCurrentPage)}
+                className="mt-4 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Try again
+              </button>
+            </div>
+          ) : isOfflineDepositsActivitiesLoading && offlineDepositsActivities.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              Loading offline deposits…
+            </div>
+          ) : filteredOfflineDepositsActivities.length ? (
+            filteredOfflineDepositsActivities.map((activity) => {
+              const displayName = activity.user?.name?.trim() || activity.user?.username?.trim() || 'Unknown user'
+              const email = activity.user?.email?.trim() || ''
+              const userType = activity.user?.userType?.trim() || ''
+              const avatarUrl = activity.user?.avatar?.trim() || ''
+
+              const proofUrl = activity.documentOfProof?.data?.trim() || ''
+              const metaSegments = [
+                activity.method.trim() ? formatReadableLabel(activity.method) : '',
+                activity.source.trim() ? formatReadableLabel(activity.source) : '',
+              ].filter(Boolean)
+              const metaLabel = metaSegments.join(' · ')
+
+              return (
+                <article
+                  key={activity.id}
+                  className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 shadow-sm shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-950/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                        ) : (
+                          <UserCircle2 className="h-6 w-6" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
+                          {displayName}
+                        </p>
+                        {email ? (
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 break-all">{email}</p>
+                        ) : null}
+                        {userType ? (
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                            {formatReadableLabel(userType)}
+                          </p>
+                        ) : null}
+                        {!email && !userType ? (
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">—</p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {currencyFormatter.format(activity.amount)}
+                      </p>
+                      <span
+                        className={cn(
+                          'mt-1 inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-semibold',
+                          getOfflineDepositStatusBadgeClasses(activity.status),
+                        )}
+                      >
+                        {formatReadableLabel(activity.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 rounded-2xl bg-slate-50/80 p-3 dark:bg-slate-900/40">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
+                      {formatReadableLabel(activity.type) || 'Offline deposit'}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 break-words">
+                      {metaLabel || '—'}
+                    </p>
+                    {activity.transactionId ? (
+                      <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 break-all">
+                        Tx: {activity.transactionId}
+                      </p>
+                    ) : null}
+                    {activity.reference ? (
+                      <p className="mt-1 font-mono text-[11px] text-slate-600 dark:text-slate-300 break-all">
+                        Ref: {activity.reference}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                      <Clock3 className="h-3 w-3" />
+                      {formatOfflineDepositTimestamp(activity)}
+                    </span>
+
+                    {proofUrl ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProofViewer({
+                            url: proofUrl,
+                            title: `Proof for ${displayName}`,
+                            mimeType: activity.documentOfProof?.type ?? null,
+                          })
+                        }
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
+                      >
+                        View proof
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              )
+            })
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              {offlineDepositsFiltersActive ? 'No deposits match these filters.' : 'No offline deposits found.'}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 hidden overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/80 lg:block">
           <div className="grid grid-cols-12 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
             <div className="col-span-3">User</div>
             <div className="col-span-4">Deposit</div>
-            <div className="col-span-2 text-right">Amount</div>
+            <div className="col-span-2 text-right">Amount</div>/
             <div className="col-span-1">Status</div>
             <div className="col-span-2 text-right">Date</div>
           </div>
@@ -531,8 +752,8 @@ export function DashboardFinancesOfflineDeposits() {
             ) : filteredOfflineDepositsActivities.length ? (
               filteredOfflineDepositsActivities.map((activity) => {
                 const displayName = activity.user?.name?.trim() || activity.user?.username?.trim() || 'Unknown user'
-                const subtitleSegments = [activity.user?.email?.trim(), activity.user?.userType?.trim()].filter(Boolean)
-                const subtitle = subtitleSegments.join(' · ')
+                const email = activity.user?.email?.trim() || ''
+                const userType = activity.user?.userType?.trim() || ''
                 const avatarUrl = activity.user?.avatar?.trim() || ''
 
                 const proofUrl = activity.documentOfProof?.data?.trim() || ''
@@ -554,29 +775,44 @@ export function DashboardFinancesOfflineDeposits() {
                       </div>
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
-                        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{subtitle || '—'}</p>
+                        {email ? (
+                          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{email}</p>
+                        ) : null}
+                        {userType ? (
+                          <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                            {formatReadableLabel(userType)}
+                          </p>
+                        ) : null}
+                        {!email && !userType ? (
+                          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">—</p>
+                        ) : null}
                       </div>
                     </div>
 
                     <div className="col-span-4 min-w-0">
-                      <p className="truncate font-semibold text-slate-900 dark:text-slate-100">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100 break-words">
                         {formatReadableLabel(activity.type) || 'Offline deposit'}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{metaLabel || '—'}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 break-words">{metaLabel || '—'}</p>
                       {activity.transactionId ? (
-                        <p className="mt-1 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 break-all">
                           Tx: {activity.transactionId}
                         </p>
                       ) : null}
                       {proofUrl ? (
-                        <a
-                          href={proofUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProofViewer({
+                              url: proofUrl,
+                              title: `Proof for ${displayName}`,
+                              mimeType: activity.documentOfProof?.type ?? null,
+                            })
+                          }
                           className="mt-1 inline-flex w-fit rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
                         >
                           View proof
-                        </a>
+                        </button>
                       ) : null}
                     </div>
 
@@ -695,4 +931,3 @@ export function DashboardFinancesOfflineDeposits() {
     </div>
   )
 }
-

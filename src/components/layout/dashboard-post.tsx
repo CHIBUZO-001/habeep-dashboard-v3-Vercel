@@ -754,8 +754,7 @@ export function DashboardPost() {
                 Post overview
               </h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Derived from{" "}
-                <span className="font-mono">/api/content/post/overview</span>
+                Derived from post overview.
               </p>
               {metaTimestamp ? (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -826,7 +825,7 @@ export function DashboardPost() {
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {totalPosts > 0
                   ? `Showing ${numberFormatter.format(pageStart)}-${numberFormatter.format(pageEnd)} of ${numberFormatter.format(totalPosts)} posts`
-                  : "Snapshot from /api/content/posts/list"}
+                  : "Snapshot from posts list"}
                 {hasActiveFilters
                   ? ` • ${numberFormatter.format(filteredPosts.length)} match${filteredPosts.length === 1 ? "" : "es"} on this page`
                   : ""}
