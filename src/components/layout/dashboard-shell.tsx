@@ -13,6 +13,7 @@ import { GlobalSearchModal } from '../overlays/global-search-modal'
 import { NotificationsDrawer, type DashboardNotification } from '../overlays/notifications-drawer'
 import { useToast } from '../ui/toast-provider'
 import { DashboardActivityLogs } from './dashboard-activity-logs'
+import { DashboardBlog } from './dashboard-blog'
 import { DashboardCalendar } from './dashboard-calendar'
 import { DashboardOverview } from './dashboard-overview'
 import { DashboardPerformance } from './dashboard-performance'
@@ -167,6 +168,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const isTasksPage = activeRoute === '/dashboard/tasks'
   const isCalendarPage = activeRoute === '/dashboard/calendar'
   const isPostPage = activeRoute === '/dashboard/post'
+  const isBlogPage = activeRoute === '/dashboard/blog'
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
     [notifications],
@@ -367,6 +369,8 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                     <DashboardCalendar />
                   ) : isPostPage ? (
                     <DashboardPost />
+                  ) : isBlogPage ? (
+                    <DashboardBlog />
                   ) : (
                     <section className="dashboard-enter dashboard-enter-delay-1 rounded-2xl border border-slate-200/90 bg-white/80 p-6 text-sm shadow-sm shadow-slate-900/5 ring-1 ring-white/80 dark:border-slate-800/90 dark:bg-slate-900/80 dark:ring-slate-800/80">
                       <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{activeLabel}</h3>

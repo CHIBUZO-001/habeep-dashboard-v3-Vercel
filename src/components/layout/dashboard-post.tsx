@@ -11,7 +11,7 @@ import {
   Timer,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "../../lib/cn";
 import { getApiErrorMessage } from "../../lib/http-client";
@@ -87,6 +87,7 @@ export function DashboardPost() {
   const [viewPostErrorMessage, setViewPostErrorMessage] = useState<
     string | null
   >(null);
+  const listLimitRef = useRef<number | null>(null);
   const { toast } = useToast();
 
   const loadOverview = useCallback(
@@ -118,10 +119,19 @@ export function DashboardPost() {
     async (showErrorToast = false) => {
       setIsPostsLoading(true);
       try {
-        const response = await getPostsList({ page });
+        const response = await getPostsList({
+          page,
+          limit: listLimitRef.current ?? undefined,
+        });
         setPosts(response.data.items);
         setPostsMeta(response.data.meta);
         setPostsMetaTimestamp(response.meta.timestamp);
+        if (
+          typeof response.data.meta.limit === "number" &&
+          response.data.meta.limit > 0
+        ) {
+          listLimitRef.current = response.data.meta.limit;
+        }
         setPostsErrorMessage(null);
       } catch (error) {
         const message = getApiErrorMessage(error, "Failed to load posts list.");
@@ -808,7 +818,7 @@ export function DashboardPost() {
         </div>
 
         <div className="relative z-10">
-          <header className="flex items-start justify-between gap-3 sm:items-center">
+          <header className="flex flex-wrap items-start gap-3 sm:flex-nowrap sm:items-center">
             <div className="min-w-0 flex-1">
               <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                 Posts
@@ -828,7 +838,7 @@ export function DashboardPost() {
               ) : null}
             </div>
 
-            <div className="shrink-0">
+            <div className="ml-auto shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -989,28 +999,24 @@ export function DashboardPost() {
 	              <div className="sm:hidden">
 	                <div className="flex flex-col gap-3 max-[400px]:gap-2">
 	                  <div className="flex items-center justify-between gap-2">
-	                    <button
-	                      type="button"
-	                      onClick={() =>
-	                        setPage((previous) => Math.max(previous - 1, 1))
-	                      }
-	                      disabled={currentListPage <= 1 || isPostsLoading}
-	                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 max-[400px]:h-8 max-[400px]:px-2 max-[400px]:text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-	                    >
+		                    <button
+		                      type="button"
+		                      onClick={() => setPage(Math.max(currentListPage - 1, 1))}
+		                      disabled={currentListPage <= 1 || isPostsLoading}
+		                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 max-[400px]:h-8 max-[400px]:px-2 max-[400px]:text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+		                    >
 	                      <ChevronLeft className="h-4 w-4" />
 	                      Prev
 	                    </button>
 
-	                    <button
-	                      type="button"
-	                      onClick={() =>
-	                        setPage((previous) =>
-	                          Math.min(previous + 1, totalPages),
-	                        )
-	                      }
-	                      disabled={currentListPage >= totalPages || isPostsLoading}
-	                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 max-[400px]:h-8 max-[400px]:px-2 max-[400px]:text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-	                    >
+		                    <button
+		                      type="button"
+		                      onClick={() =>
+		                        setPage(Math.min(currentListPage + 1, totalPages))
+		                      }
+		                      disabled={currentListPage >= totalPages || isPostsLoading}
+		                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 max-[400px]:h-8 max-[400px]:px-2 max-[400px]:text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+		                    >
 	                      Next
 	                      <ChevronRight className="h-4 w-4" />
 	                    </button>
@@ -1055,14 +1061,12 @@ export function DashboardPost() {
 
 	              <div className="hidden items-center justify-end gap-3 sm:flex">
 	                <div className="flex flex-wrap items-center gap-2">
-	                  <button
-	                    type="button"
-	                    onClick={() =>
-	                      setPage((previous) => Math.max(previous - 1, 1))
-	                    }
-	                    disabled={currentListPage <= 1 || isPostsLoading}
-	                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-	                  >
+		                  <button
+		                    type="button"
+		                    onClick={() => setPage(Math.max(currentListPage - 1, 1))}
+		                    disabled={currentListPage <= 1 || isPostsLoading}
+		                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+		                  >
 	                    <ChevronLeft className="h-4 w-4" />
 	                    Prev
 	                  </button>
@@ -1102,14 +1106,14 @@ export function DashboardPost() {
 	                    })}
 	                  </div>
 
-	                  <button
-	                    type="button"
-	                    onClick={() =>
-	                      setPage((previous) => Math.min(previous + 1, totalPages))
-	                    }
-	                    disabled={currentListPage >= totalPages || isPostsLoading}
-	                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-	                  >
+		                  <button
+		                    type="button"
+		                    onClick={() =>
+		                      setPage(Math.min(currentListPage + 1, totalPages))
+		                    }
+		                    disabled={currentListPage >= totalPages || isPostsLoading}
+		                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+		                  >
 	                    Next
 	                    <ChevronRight className="h-4 w-4" />
 	                  </button>

@@ -248,6 +248,27 @@ function normalizePostListItem(item: unknown): PostListItem | null {
     return null;
   }
 
+  const rawStatus = toString(source.status);
+  const normalizedStatus = rawStatus.trim();
+  const statusLower = normalizedStatus.toLowerCase();
+  const hasIsPublishedField = Object.prototype.hasOwnProperty.call(
+    source,
+    "isPublished",
+  );
+
+  let isPublished = false;
+  if (hasIsPublishedField) {
+    isPublished = toBoolean(source.isPublished);
+  } else if (statusLower === "published") {
+    isPublished = true;
+  } else if (statusLower === "draft") {
+    isPublished = false;
+  }
+
+  const status =
+    normalizedStatus ||
+    (hasIsPublishedField ? (isPublished ? "published" : "draft") : "");
+
   const normalized: PostListItem = {
     id,
     type: toString(source.type) || "post",
@@ -258,18 +279,18 @@ function normalizePostListItem(item: unknown): PostListItem | null {
     tags: toStringArray(source.tags),
     userTags: toStringArray(source.userTags),
     mediaAssets: toStringArray(source.mediaAssets),
-    isPublished: toBoolean(source.isPublished),
+    isPublished,
     visibility: toString(source.visibility) || "PUBLIC",
     viewCount: toNumber(source.viewCount),
     likeCount: toNumber(source.likeCount),
     commentCount: toNumber(source.commentCount),
     shareCount: toNumber(source.shareCount),
-	    publishedAt: toString(source.publishedAt),
-	    lastUpdatedAt: toString(source.lastUpdatedAt),
-	    createdAt: toString(source.createdAt),
-	    updatedAt: toString(source.updatedAt),
-	    status: toString(source.status) || undefined,
-	    listingId: toString(source.listingId),
+    publishedAt: toString(source.publishedAt),
+    lastUpdatedAt: toString(source.lastUpdatedAt),
+    createdAt: toString(source.createdAt),
+    updatedAt: toString(source.updatedAt),
+    status: status || undefined,
+    listingId: toString(source.listingId),
     location: normalizePostListLocation(source.location),
   };
 
