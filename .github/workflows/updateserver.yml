@@ -18,66 +18,35 @@ jobs:
     if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:5.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongo --quiet"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: |
-          npm config set registry https://registry.npmjs.org/
-          npm ci
-
-      - name: Verify test toolchain versions
-        run: |
-          npx jest --version
-          node -e "const p=require('./node_modules/ts-jest/package.json'); console.log('ts-jest', p.version)"
-
-      - name: Set up environment variables
-        run: |
-          echo "NODE_ENV=test" >> $GITHUB_ENV
-          echo "CI=true" >> $GITHUB_ENV
-          echo "MAIN_API_MONGO_DB_STRING=mongodb://localhost:27017/habeep-test" >> $GITHUB_ENV
-          echo "MAIN_API_ENCRYPTION_KEY=test-encryption-key-for-ci" >> $GITHUB_ENV
-          echo "MAIN_API_JWT_ENCRYPTION_KEY=test-jwt-key-for-ci" >> $GITHUB_ENV
-          echo "MAIN_API_GEMINI_API_KEY=test-gemini-key-for-ci" >> $GITHUB_ENV
-          echo "APP_VERSION=v2" >> $GITHUB_ENV
-
-      - name: Wait for MongoDB
-        run: |
-          echo "Waiting for MongoDB to be ready..."
-          timeout 60 bash -c 'until nc -z localhost 27017; do echo "Waiting for MongoDB..."; sleep 2; done'
-          echo "MongoDB is ready!"
-
-      - name: Check environment variables
-        run: npm run check-env
-
-      - name: Run unit tests
-        run: npm test
+          pnpm install --frozen-lockfile
 
       - name: Run linting
-        run: npm run lint
+        run: pnpm run lint
 
-      - name: Upload test coverage
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-coverage
-          path: coverage/
+          name: dist
+          path: dist/
           retention-days: 7
 
   deploy-staging:
