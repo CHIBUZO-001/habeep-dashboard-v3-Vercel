@@ -18,19 +18,13 @@ jobs:
     if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:5.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongo --quiet"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -74,11 +68,11 @@ jobs:
       - name: Run linting
         run: pnpm run lint
 
-      - name: Upload test coverage
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-coverage
-          path: coverage/
+          name: dist
+          path: dist/
           retention-days: 7
 
   deploy-staging:
