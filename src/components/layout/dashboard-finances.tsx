@@ -1,6 +1,20 @@
-import { DashboardFinancesOfflineDeposits } from './dashboard-finances.offline-deposits'
-import { DashboardFinancesRevenue } from './dashboard-finances.revenue'
-import { DashboardFinancesWallet } from './dashboard-finances.wallet'
+import { lazy } from 'react'
+
+const DashboardFinancesOfflineDeposits = lazy(() =>
+  import('./dashboard-finances.offline-deposits').then((module) => ({
+    default: module.DashboardFinancesOfflineDeposits,
+  })),
+)
+const DashboardFinancesRevenue = lazy(() =>
+  import('./dashboard-finances.revenue').then((module) => ({
+    default: module.DashboardFinancesRevenue,
+  })),
+)
+const DashboardFinancesWallet = lazy(() =>
+  import('./dashboard-finances.wallet').then((module) => ({
+    default: module.DashboardFinancesWallet,
+  })),
+)
 
 export type DashboardFinancesSection = 'revenue' | 'wallet' | 'offline-deposits'
 
@@ -19,4 +33,3 @@ export function DashboardFinances({ section }: DashboardFinancesProps) {
 
   return <DashboardFinancesRevenue />
 }
-

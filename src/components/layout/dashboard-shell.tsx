@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
 import { findMenuById, findMenuIdByHref, getDefaultMenuId } from '../../data/sidebar-menus'
 import { cn } from '../../lib/cn'
@@ -12,18 +12,39 @@ import { AutomationAssistantModal } from '../overlays/automation-assistant-modal
 import { GlobalSearchModal } from '../overlays/global-search-modal'
 import { NotificationsDrawer, type DashboardNotification } from '../overlays/notifications-drawer'
 import { useToast } from '../ui/toast-provider'
-import { DashboardActivityLogs } from './dashboard-activity-logs'
-import { DashboardBlog } from './dashboard-blog'
-import { DashboardCalendar } from './dashboard-calendar'
-import { DashboardFinances } from './dashboard-finances'
-import { DashboardOverview } from './dashboard-overview'
-import { DashboardPerformance } from './dashboard-performance'
-import { DashboardPost } from './dashboard-post'
-import { DashboardProperties } from './dashboard-properties'
 import { DashboardSidebar } from './dashboard-sidebar'
-import { DashboardTasks } from './dashboard-tasks'
 import { DashboardTopbar, type ProfileAction } from './dashboard-topbar'
-import { DashboardUserManagement } from './dashboard-user-management'
+
+const DashboardOverview = lazy(() =>
+  import('./dashboard-overview').then((module) => ({ default: module.DashboardOverview })),
+)
+const DashboardActivityLogs = lazy(() =>
+  import('./dashboard-activity-logs').then((module) => ({ default: module.DashboardActivityLogs })),
+)
+const DashboardUserManagement = lazy(() =>
+  import('./dashboard-user-management').then((module) => ({ default: module.DashboardUserManagement })),
+)
+const DashboardProperties = lazy(() =>
+  import('./dashboard-properties').then((module) => ({ default: module.DashboardProperties })),
+)
+const DashboardFinances = lazy(() =>
+  import('./dashboard-finances').then((module) => ({ default: module.DashboardFinances })),
+)
+const DashboardPerformance = lazy(() =>
+  import('./dashboard-performance').then((module) => ({ default: module.DashboardPerformance })),
+)
+const DashboardTasks = lazy(() =>
+  import('./dashboard-tasks').then((module) => ({ default: module.DashboardTasks })),
+)
+const DashboardCalendar = lazy(() =>
+  import('./dashboard-calendar').then((module) => ({ default: module.DashboardCalendar })),
+)
+const DashboardPost = lazy(() =>
+  import('./dashboard-post').then((module) => ({ default: module.DashboardPost })),
+)
+const DashboardBlog = lazy(() =>
+  import('./dashboard-blog').then((module) => ({ default: module.DashboardBlog })),
+)
 
 const SIDEBAR_STORAGE_KEY = 'habeep-sidebar-open'
 
@@ -135,6 +156,15 @@ function getInitialSidebarState() {
 
 type DashboardShellProps = {
   onLogout: () => void
+}
+
+function DashboardRouteFallback({ label }: { label: string }) {
+  return (
+    <section className="dashboard-enter dashboard-enter-delay-1 rounded-2xl border border-slate-200/90 bg-white/80 p-6 text-sm shadow-sm shadow-slate-900/5 ring-1 ring-white/80 dark:border-slate-800/90 dark:bg-slate-900/80 dark:ring-slate-800/80">
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Loading {label}...</p>
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Preparing the dashboard module.</p>
+    </section>
+  )
 }
 
 export function DashboardShell({ onLogout }: DashboardShellProps) {
@@ -403,47 +433,49 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                     </div>
                   </section>
 
-                  {isOverviewDashboardPage ? (
-                    <DashboardOverview />
-                  ) : isActivityLogsPage ? (
-                    <DashboardActivityLogs />
-                  ) : isUserManagementUsersPage ? (
-                    <DashboardUserManagement section="users" />
-                  ) : isUserManagementTenantsPage ? (
-                    <DashboardUserManagement section="tenants" />
-                  ) : isUserManagementAgentsPage ? (
-                    <DashboardUserManagement section="agents" />
-                  ) : isUserManagementLandlordsPage ? (
-                    <DashboardUserManagement section="landlords" />
-                  ) : isPropertiesOverviewPage ? (
-                    <DashboardProperties section="overview" />
-                  ) : isPropertiesAnalyticsPage ? (
-                    <DashboardProperties section="analytics" />
-                  ) : isFinancesRevenuePage ? (
-                    <DashboardFinances section="revenue" />
-                  ) : isFinancesWalletPage ? (
-                    <DashboardFinances section="wallet" />
-                  ) : isFinancesOfflineDepositsPage ? (
-                    <DashboardFinances section="offline-deposits" />
-                  ) : isPerformancePage ? (
-                    <DashboardPerformance />
-                  ) : isTasksPage ? (
-                    <DashboardTasks />
-                  ) : isCalendarPage ? (
-                    <DashboardCalendar />
-                  ) : isPostPage ? (
-                    <DashboardPost />
-                  ) : isBlogPage ? (
-                    <DashboardBlog />
-                  ) : (
-                    <section className="dashboard-enter dashboard-enter-delay-1 rounded-2xl border border-slate-200/90 bg-white/80 p-6 text-sm shadow-sm shadow-slate-900/5 ring-1 ring-white/80 dark:border-slate-800/90 dark:bg-slate-900/80 dark:ring-slate-800/80">
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{activeLabel}</h3>
-                      <p className="mt-2 text-slate-600 dark:text-slate-300">
-                        This module shell is ready. Plug in the specific API endpoints and UI widgets for this page
-                        next.
-                      </p>
-                    </section>
-                  )}
+                  <Suspense fallback={<DashboardRouteFallback label={activeLabel} />}>
+                    {isOverviewDashboardPage ? (
+                      <DashboardOverview />
+                    ) : isActivityLogsPage ? (
+                      <DashboardActivityLogs />
+                    ) : isUserManagementUsersPage ? (
+                      <DashboardUserManagement section="users" />
+                    ) : isUserManagementTenantsPage ? (
+                      <DashboardUserManagement section="tenants" />
+                    ) : isUserManagementAgentsPage ? (
+                      <DashboardUserManagement section="agents" />
+                    ) : isUserManagementLandlordsPage ? (
+                      <DashboardUserManagement section="landlords" />
+                    ) : isPropertiesOverviewPage ? (
+                      <DashboardProperties section="overview" />
+                    ) : isPropertiesAnalyticsPage ? (
+                      <DashboardProperties section="analytics" />
+                    ) : isFinancesRevenuePage ? (
+                      <DashboardFinances section="revenue" />
+                    ) : isFinancesWalletPage ? (
+                      <DashboardFinances section="wallet" />
+                    ) : isFinancesOfflineDepositsPage ? (
+                      <DashboardFinances section="offline-deposits" />
+                    ) : isPerformancePage ? (
+                      <DashboardPerformance />
+                    ) : isTasksPage ? (
+                      <DashboardTasks />
+                    ) : isCalendarPage ? (
+                      <DashboardCalendar />
+                    ) : isPostPage ? (
+                      <DashboardPost />
+                    ) : isBlogPage ? (
+                      <DashboardBlog />
+                    ) : (
+                      <section className="dashboard-enter dashboard-enter-delay-1 rounded-2xl border border-slate-200/90 bg-white/80 p-6 text-sm shadow-sm shadow-slate-900/5 ring-1 ring-white/80 dark:border-slate-800/90 dark:bg-slate-900/80 dark:ring-slate-800/80">
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{activeLabel}</h3>
+                        <p className="mt-2 text-slate-600 dark:text-slate-300">
+                          This module shell is ready. Plug in the specific API endpoints and UI widgets for this page
+                          next.
+                        </p>
+                      </section>
+                    )}
+                  </Suspense>
                 </>
               )}
             </div>

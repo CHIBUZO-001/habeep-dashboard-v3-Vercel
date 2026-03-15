@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
+import { lazy, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 
 import { getApiErrorMessage } from '../../lib/http-client'
 import {
@@ -9,8 +9,6 @@ import {
   type PropertyList,
   type PropertyMetrics,
 } from '../../services'
-import { AnalyticsDashboardView } from './properties-dashboard/analytics-view'
-import { OverviewDashboardView } from './properties-dashboard/overview-view'
 import {
   emptyPropertyAnalyticsDashboard,
   getAvailableFilterValues,
@@ -19,6 +17,13 @@ import {
   getPropertyStatusRequestValue,
 } from './properties-dashboard/shared'
 import { useToast } from '../ui/toast-provider'
+
+const AnalyticsDashboardView = lazy(() =>
+  import('./properties-dashboard/analytics-view').then((module) => ({ default: module.AnalyticsDashboardView })),
+)
+const OverviewDashboardView = lazy(() =>
+  import('./properties-dashboard/overview-view').then((module) => ({ default: module.OverviewDashboardView })),
+)
 
 type DashboardPropertiesProps = {
   section: 'overview' | 'analytics'
