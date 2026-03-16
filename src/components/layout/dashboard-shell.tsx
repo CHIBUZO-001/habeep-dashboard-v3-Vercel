@@ -244,6 +244,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
   const isPropertiesAnalyticsPage = activeRoute === '/dashboard/properties/analytics'
   const isFinancesRevenuePage = activeRoute === '/dashboard/finances'
   const isFinancesWalletPage = activeRoute === '/dashboard/finances/wallet'
+  const isFinancesLoansPage = activeRoute === '/dashboard/finances/loans'
   const isFinancesOfflineDepositsPage = activeRoute === '/dashboard/finances/offline-deposits'
   const isPerformancePage = activeRoute === '/dashboard/performance'
   const isTasksPage = activeRoute === '/dashboard/tasks'
@@ -454,6 +455,8 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                       <DashboardFinances section="revenue" />
                     ) : isFinancesWalletPage ? (
                       <DashboardFinances section="wallet" />
+                    ) : isFinancesLoansPage ? (
+                      <DashboardFinances section="loans" />
                     ) : isFinancesOfflineDepositsPage ? (
                       <DashboardFinances section="offline-deposits" />
                     ) : isPerformancePage ? (

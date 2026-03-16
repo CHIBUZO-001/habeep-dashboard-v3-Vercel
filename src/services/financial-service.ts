@@ -109,6 +109,98 @@ export type FinancialOfflineDepositsSummary = {
   cards: FinancialOfflineDepositsSummaryCards
 }
 
+export type FinancialLoansRange = {
+  from: string | null
+  to: string | null
+  previousFrom: string | null
+  previousTo: string | null
+}
+
+export type FinancialLoansSummaryCard = {
+  value: number
+  changeRate: number | null
+}
+
+export type FinancialLoansSummaryCards = {
+  outstandingBalance: FinancialLoansSummaryCard
+  totalDisbursed: FinancialLoansSummaryCard
+  activeLoans: FinancialLoansSummaryCard
+  overdueLoans: FinancialLoansSummaryCard
+}
+
+export type FinancialLoansSummary = {
+  range: FinancialLoansRange
+  currency: string
+  cards: FinancialLoansSummaryCards
+}
+
+export type FinancialLoansOverview = {
+  totalLoans: number
+  totalLoanValue: number
+  activeLoans: number
+  activeOutstanding: number
+  overdueLoans: number
+  overdueOutstanding: number
+  defaultRate: number
+  avgInterestRate: number
+}
+
+export type FinancialLoansPortfolioPoint = {
+  month: string
+  disbursements: number
+  collections: number
+  overdue: number
+}
+
+export type FinancialLoansPortfolio = FinancialLoansPortfolioPoint[]
+
+export type FinancialLoansDistributionItem = {
+  type: string
+  count: number
+  percentage: number
+}
+
+export type FinancialLoansDistribution = {
+  total: number
+  items: FinancialLoansDistributionItem[]
+}
+
+export type FinancialLoanBorrower = {
+  name: string | null
+  username: string | null
+  avatar: string | null
+  email: string | null
+  userType: string | null
+}
+
+export type FinancialLoan = {
+  id: string
+  reference: string | null
+  borrower: FinancialLoanBorrower | null
+  principal: number
+  interestRate: number | null
+  status: string
+  type: string
+  product: string | null
+  currency: string | null
+  termMonths: number | null
+  disbursedAt: string | null
+  dueAt: string | null
+  createdAt: string
+}
+
+export type FinancialLoansPagination = {
+  page: number
+  perPage: number
+  total: number
+  totalPages: number
+}
+
+export type FinancialLoans = {
+  loans: FinancialLoan[]
+  pagination: FinancialLoansPagination
+}
+
 export type FinancialOfflineDepositUser = {
   name: string | null
   username: string | null
@@ -293,6 +385,118 @@ type FinancialOfflineDepositsSummaryRaw = {
   range?: unknown
   currency?: unknown
   cards?: unknown
+}
+
+type FinancialLoansRangeRaw = {
+  from?: unknown
+  to?: unknown
+  previousFrom?: unknown
+  previousTo?: unknown
+}
+
+type FinancialLoansSummaryCardRaw = {
+  value?: unknown
+  changeRate?: unknown
+}
+
+type FinancialLoansSummaryCardsRaw = {
+  outstandingBalance?: unknown
+  totalDisbursed?: unknown
+  activeLoans?: unknown
+  overdueLoans?: unknown
+}
+
+type FinancialLoansSummaryRaw = {
+  range?: unknown
+  currency?: unknown
+  cards?: unknown
+}
+
+type FinancialLoansOverviewRaw = {
+  totalLoans?: unknown
+  totalLoanValue?: unknown
+  activeLoans?: unknown
+  activeOutstanding?: unknown
+  overdueLoans?: unknown
+  overdueOutstanding?: unknown
+  defaultRate?: unknown
+  avgInterestRate?: unknown
+}
+
+type FinancialLoansPortfolioPointRaw = {
+  month?: unknown
+  disbursements?: unknown
+  collections?: unknown
+  overdue?: unknown
+}
+
+type FinancialLoansDistributionItemRaw = {
+  type?: unknown
+  count?: unknown
+  percentage?: unknown
+}
+
+type FinancialLoansDistributionRaw = {
+  total?: unknown
+  items?: unknown
+}
+
+type FinancialLoanBorrowerRaw = {
+  name?: unknown
+  username?: unknown
+  avatar?: unknown
+  email?: unknown
+  userType?: unknown
+}
+
+type FinancialLoanRaw = {
+  id?: unknown
+  _id?: unknown
+  reference?: unknown
+  borrower?: unknown
+  user?: unknown
+  userId?: unknown
+  landlordId?: unknown
+  principal?: unknown
+  amount?: unknown
+  amountToPay?: unknown
+  amountSettled?: unknown
+  outstanding?: unknown
+  monthlyPayment?: unknown
+  interestRate?: unknown
+  rate?: unknown
+  creditScore?: unknown
+  riskLevel?: unknown
+  status?: unknown
+  type?: unknown
+  product?: unknown
+  currency?: unknown
+  termMonths?: unknown
+  durationMonths?: unknown
+  dateApplied?: unknown
+  dateDisbursed?: unknown
+  disbursedAt?: unknown
+  dueDate?: unknown
+  dueAt?: unknown
+  createdAt?: unknown
+  repaymentProgress?: unknown
+}
+
+type FinancialLoansPaginationRaw = {
+  page?: unknown
+  perPage?: unknown
+  total?: unknown
+  totalPages?: unknown
+}
+
+type FinancialLoansRaw = {
+  loans?: unknown
+  activities?: unknown
+  data?: unknown
+  items?: unknown
+  pagination?: unknown
+  meta?: unknown
+  metadata?: unknown
 }
 
 type FinancialOfflineDepositUserRaw = {
@@ -653,6 +857,140 @@ export async function getFinancialOfflineDepositsSummary(params: { from: string;
   } satisfies FinancialOfflineDepositsSummary
 }
 
+function normalizeLoansRange(value: unknown): FinancialLoansRange {
+  const source = toObject(value) as FinancialLoansRangeRaw | null
+  return {
+    from: toText(source?.from) || null,
+    to: toText(source?.to) || null,
+    previousFrom: toText(source?.previousFrom) || null,
+    previousTo: toText(source?.previousTo) || null,
+  }
+}
+
+function normalizeLoansSummaryCard(value: unknown): FinancialLoansSummaryCard {
+  const source = toObject(value) as FinancialLoansSummaryCardRaw | null
+  return {
+    value: toNumber(source?.value),
+    changeRate: toNumberOrNull(source?.changeRate),
+  }
+}
+
+function normalizeLoansSummaryCards(value: unknown): FinancialLoansSummaryCards {
+  const source = toObject(value) as FinancialLoansSummaryCardsRaw | null
+  return {
+    outstandingBalance: normalizeLoansSummaryCard(source?.outstandingBalance),
+    totalDisbursed: normalizeLoansSummaryCard(source?.totalDisbursed),
+    activeLoans: normalizeLoansSummaryCard(source?.activeLoans),
+    overdueLoans: normalizeLoansSummaryCard(source?.overdueLoans),
+  }
+}
+
+export async function getFinancialLoansSummary(params: { from: string; to: string }) {
+  const rawDetails = await apiGet<FinancialLoansSummaryRaw>('/api/financial/loans/summary', {
+    params,
+  })
+
+  return {
+    range: normalizeLoansRange(rawDetails.range),
+    currency: toText(rawDetails.currency) || 'NGN',
+    cards: normalizeLoansSummaryCards(rawDetails.cards),
+  } satisfies FinancialLoansSummary
+}
+
+function normalizeLoansOverview(value: unknown): FinancialLoansOverview {
+  const source = toObject(value) as FinancialLoansOverviewRaw | null
+  return {
+    totalLoans: toNumber(source?.totalLoans),
+    totalLoanValue: toNumber(source?.totalLoanValue),
+    activeLoans: toNumber(source?.activeLoans),
+    activeOutstanding: toNumber(source?.activeOutstanding),
+    overdueLoans: toNumber(source?.overdueLoans),
+    overdueOutstanding: toNumber(source?.overdueOutstanding),
+    defaultRate: toNumber(source?.defaultRate),
+    avgInterestRate: toNumber(source?.avgInterestRate),
+  }
+}
+
+export async function getFinancialLoansOverview() {
+  const rawDetails = await apiGet<FinancialLoansOverviewRaw>('/api/financial/loans/overview')
+  return normalizeLoansOverview(rawDetails) satisfies FinancialLoansOverview
+}
+
+function normalizeLoansPortfolioPoint(value: unknown): FinancialLoansPortfolioPoint | null {
+  const source = toObject(value) as FinancialLoansPortfolioPointRaw | null
+  if (!source) {
+    return null
+  }
+
+  const month = toText(source.month)
+  if (!month) {
+    return null
+  }
+
+  return {
+    month,
+    disbursements: toNumber(source.disbursements),
+    collections: toNumber(source.collections),
+    overdue: toNumber(source.overdue),
+  } satisfies FinancialLoansPortfolioPoint
+}
+
+function normalizeLoansPortfolio(value: unknown): FinancialLoansPortfolio {
+  const sourceArray = Array.isArray(value)
+    ? value
+    : Array.isArray(toObject(value)?.data)
+      ? (toObject(value)?.data as unknown[])
+      : null
+
+  if (!sourceArray) {
+    return []
+  }
+
+  return sourceArray
+    .map((point) => normalizeLoansPortfolioPoint(point))
+    .filter((point): point is FinancialLoansPortfolioPoint => Boolean(point))
+}
+
+export async function getFinancialLoansPortfolio() {
+  const rawDetails = await apiGet<unknown>('/api/financial/loans/portfolio')
+  return normalizeLoansPortfolio(rawDetails) satisfies FinancialLoansPortfolio
+}
+
+function normalizeLoansDistributionItem(value: unknown): FinancialLoansDistributionItem | null {
+  const source = toObject(value) as FinancialLoansDistributionItemRaw | null
+  if (!source) {
+    return null
+  }
+
+  const type = toText(source.type)
+  if (!type) {
+    return null
+  }
+
+  return {
+    type,
+    count: toNumber(source.count),
+    percentage: toNumber(source.percentage),
+  } satisfies FinancialLoansDistributionItem
+}
+
+function normalizeLoansDistribution(value: unknown): FinancialLoansDistribution {
+  const source = toObject(value) as FinancialLoansDistributionRaw | null
+  const itemsSource = Array.isArray(source?.items) ? source.items : []
+
+  return {
+    total: toNumber(source?.total),
+    items: itemsSource
+      .map((item) => normalizeLoansDistributionItem(item))
+      .filter((item): item is FinancialLoansDistributionItem => Boolean(item)),
+  } satisfies FinancialLoansDistribution
+}
+
+export async function getFinancialLoansDistribution() {
+  const rawDetails = await apiGet<FinancialLoansDistributionRaw>('/api/financial/loans/distribution')
+  return normalizeLoansDistribution(rawDetails) satisfies FinancialLoansDistribution
+}
+
 function normalizeOfflineDepositUser(value: unknown): FinancialOfflineDepositUser | null {
   const source = toObject(value) as FinancialOfflineDepositUserRaw | null
   if (!source) {
@@ -757,6 +1095,122 @@ export async function getFinancialOfflineDeposits(page = 1, perPage = 20) {
     activities: normalizeOfflineDepositActivities(rawDetails.activities),
     pagination: normalizeOfflineDepositsPagination(rawDetails.pagination),
   } satisfies FinancialOfflineDeposits
+}
+
+function normalizeLoanBorrower(value: unknown): FinancialLoanBorrower | null {
+  const source = toObject(value) as FinancialLoanBorrowerRaw | null
+  if (!source) {
+    return null
+  }
+
+  const name = toText(source.name) || null
+  const username = toText(source.username) || null
+  const avatar = toText(source.avatar) || null
+  const email = toText(source.email) || null
+  const userType = toText(source.userType) || null
+
+  if (!name && !username && !avatar && !email && !userType) {
+    return null
+  }
+
+  return {
+    name,
+    username,
+    avatar,
+    email,
+    userType,
+  }
+}
+
+function normalizeLoan(value: unknown): FinancialLoan | null {
+  const source = toObject(value) as FinancialLoanRaw | null
+  if (!source) {
+    return null
+  }
+
+  const id = toText(source.id) || toText(source._id)
+  if (!id) {
+    return null
+  }
+
+  const borrower =
+    normalizeLoanBorrower(source.borrower ?? source.user) ??
+    (() => {
+      const userId = toText(source.userId)
+      if (!userId) {
+        return null
+      }
+
+      return {
+        name: null,
+        username: userId,
+        avatar: null,
+        email: null,
+        userType: null,
+      } satisfies FinancialLoanBorrower
+    })()
+
+  return {
+    id,
+    reference: toText(source.reference) || null,
+    borrower,
+    principal: toNumber(source.principal ?? source.amount),
+    interestRate: toNumberOrNull(source.interestRate ?? source.rate),
+    status: toText(source.status),
+    type: toText(source.type),
+    product: toText(source.product) || null,
+    currency: toText(source.currency) || null,
+    termMonths: toNumberOrNull(source.termMonths ?? source.durationMonths),
+    disbursedAt: toText(source.disbursedAt ?? source.dateDisbursed) || null,
+    dueAt: toText(source.dueAt ?? source.dueDate) || null,
+    createdAt: toText(source.createdAt ?? source.dateApplied),
+  } satisfies FinancialLoan
+}
+
+function normalizeLoans(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .map((loan) => normalizeLoan(loan))
+    .filter((loan): loan is FinancialLoan => Boolean(loan))
+}
+
+function normalizeLoansPagination(value: unknown): FinancialLoansPagination {
+  const source = toObject(value) as FinancialLoansPaginationRaw | null
+  return {
+    page: toNumber(source?.page) || 1,
+    perPage: toNumber(source?.perPage) || 20,
+    total: toNumber(source?.total),
+    totalPages: toNumber(source?.totalPages) || 1,
+  }
+}
+
+export async function getFinancialLoans(page = 1, perPage = 20) {
+  const rawDetails = await apiGet<FinancialLoansRaw>('/api/financial/loans', {
+    params: {
+      page,
+      perPage,
+    },
+  })
+
+  if (Array.isArray(rawDetails)) {
+    return {
+      loans: normalizeLoans(rawDetails),
+      pagination: {
+        page,
+        perPage,
+        total: rawDetails.length,
+        totalPages: 1,
+      },
+    } satisfies FinancialLoans
+  }
+
+  return {
+    loans: normalizeLoans(rawDetails.loans ?? rawDetails.items ?? rawDetails.activities ?? rawDetails.data),
+    pagination: normalizeLoansPagination(rawDetails.pagination ?? rawDetails.meta ?? rawDetails.metadata),
+  } satisfies FinancialLoans
 }
 
 function normalizeWalletActivityUser(value: unknown): FinancialWalletActivityUser | null {

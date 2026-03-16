@@ -288,7 +288,7 @@ export function DashboardFinancesWallet() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: 'Total volume',
@@ -337,7 +337,9 @@ export function DashboardFinancesWallet() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 truncate text-2xl font-semibold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                    {stat.value}
+                  </p>
                   <p
                     className={cn(
                       'mt-2 text-xs',
@@ -369,22 +371,22 @@ export function DashboardFinancesWallet() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="relative">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <label className="relative w-full sm:w-auto">
               <span className="sr-only">Search</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by user, type, reference..."
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 md:w-64"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 sm:w-64"
               />
             </label>
 
             <select
               value={typeFilter}
               onChange={(event) => setTypeFilter(event.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 sm:w-auto"
               aria-label="Filter type"
             >
               <option value="all">All types</option>
@@ -398,7 +400,7 @@ export function DashboardFinancesWallet() {
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 sm:w-auto"
               aria-label="Filter status"
             >
               <option value="all">All statuses</option>
@@ -409,7 +411,102 @@ export function DashboardFinancesWallet() {
           </div>
         </header>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/80">
+        <div className="mt-4 space-y-3 lg:hidden">
+          {walletActivitiesErrorMessage && walletActivities.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-6 text-sm text-slate-600 shadow-sm shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-950/30 dark:text-slate-300">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Wallet activities unavailable</p>
+              <p className="mt-2">{walletActivitiesErrorMessage}</p>
+              <button
+                type="button"
+                onClick={() => void loadWalletActivities(true, walletCurrentPage)}
+                className="mt-4 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Try again
+              </button>
+            </div>
+          ) : isWalletActivitiesLoading && walletActivities.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              Loading wallet activities…
+            </div>
+          ) : filteredWalletActivities.length ? (
+            filteredWalletActivities.map((activity) => {
+              const username = activity.user?.username?.trim() || 'Unknown user'
+              const avatarUrl = activity.user?.avatar?.trim() || ''
+              const flowLabel =
+                activity.from?.trim() && activity.to?.trim() ? `${activity.from.trim()} → ${activity.to.trim()}` : ''
+
+              return (
+                <article
+                  key={activity.id}
+                  className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 shadow-sm shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-950/30"
+                >
+                  <header className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
+                        ) : (
+                          <UserCircle2 className="h-5 w-5" />
+                        )}
+	                      </div>
+	                      <div className="min-w-0">
+	                        <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{username}</p>
+	                        <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
+	                          {formatReadableLabel(activity.source)}
+	                        </p>
+	                      </div>
+                    </div>
+
+                    <span
+                      className={cn(
+                        'inline-flex items-center justify-center rounded-lg border px-2.5 py-1 text-xs font-semibold',
+                        getWalletStatusBadgeClasses(activity.status),
+                      )}
+                    >
+                      {formatReadableLabel(activity.status)}
+                    </span>
+                  </header>
+
+                  <div className="mt-4 space-y-1">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatReadableLabel(activity.type)}
+                    </p>
+	                    <p className="break-words text-xs text-slate-500 dark:text-slate-400">{activity.description || 'No description'}</p>
+	                    {activity.reference ? (
+	                      <p className="mt-1 break-all font-mono text-[11px] text-slate-500 dark:text-slate-400">
+	                        Ref: {activity.reference}
+	                      </p>
+	                    ) : null}
+	                    {flowLabel ? (
+	                      <p className="mt-1 break-words text-[11px] text-slate-500 dark:text-slate-400">{flowLabel}</p>
+	                    ) : null}
+	                  </div>
+
+                  <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                    <div className="rounded-xl bg-slate-100/70 px-4 py-3 dark:bg-slate-900/40">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Amount</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                        {currencyFormatter.format(activity.amount)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-100/70 px-4 py-3 dark:bg-slate-900/40">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Date</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        {formatWalletActivityTimestamp(activity)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              )
+            })
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              {walletFiltersActive ? 'No activities match these filters.' : 'No wallet activities found.'}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 hidden overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/80 lg:block">
           <div className="grid grid-cols-12 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
             <div className="col-span-3">User</div>
             <div className="col-span-3">Activity</div>
@@ -449,31 +546,31 @@ export function DashboardFinancesWallet() {
                         ) : (
                           <UserCircle2 className="h-5 w-5" />
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{username}</p>
-                        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                          {formatReadableLabel(activity.source)}
-                        </p>
-                      </div>
+	                      </div>
+	                      <div className="min-w-0">
+	                        <p className="break-words font-semibold text-slate-900 dark:text-slate-100">{username}</p>
+	                        <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
+	                          {formatReadableLabel(activity.source)}
+	                        </p>
+	                      </div>
                     </div>
 
-                    <div className="col-span-3 min-w-0">
-                      <p className="truncate font-semibold text-slate-900 dark:text-slate-100">
-                        {formatReadableLabel(activity.type)}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                        {activity.description || 'No description'}
-                      </p>
-                      {activity.reference ? (
-                        <p className="mt-1 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                          Ref: {activity.reference}
-                        </p>
-                      ) : null}
-                      {flowLabel ? (
-                        <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">{flowLabel}</p>
-                      ) : null}
-                    </div>
+	                    <div className="col-span-3 min-w-0">
+	                      <p className="break-words font-semibold text-slate-900 dark:text-slate-100">
+	                        {formatReadableLabel(activity.type)}
+	                      </p>
+	                      <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
+	                        {activity.description || 'No description'}
+	                      </p>
+	                      {activity.reference ? (
+	                        <p className="mt-1 break-all font-mono text-[11px] text-slate-500 dark:text-slate-400">
+	                          Ref: {activity.reference}
+	                        </p>
+	                      ) : null}
+	                      {flowLabel ? (
+	                        <p className="mt-1 break-words text-[11px] text-slate-500 dark:text-slate-400">{flowLabel}</p>
+	                      ) : null}
+	                    </div>
 
                     <div className="col-span-2 text-right font-semibold text-slate-900 dark:text-slate-100">
                       {currencyFormatter.format(activity.amount)}
@@ -589,4 +686,3 @@ export function DashboardFinancesWallet() {
     </div>
   )
 }
-

@@ -326,10 +326,10 @@ export function DashboardFinancesOfflineDeposits() {
             role="dialog"
             aria-modal="true"
             aria-label="Proof viewer"
-          >
+            >
             <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{proofViewer.title}</h3>
+                <h3 className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{proofViewer.title}</h3>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preview document proof.</p>
               </div>
 
@@ -438,7 +438,7 @@ export function DashboardFinancesOfflineDeposits() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: 'Pending review',
@@ -493,7 +493,9 @@ export function DashboardFinancesOfflineDeposits() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 truncate text-2xl font-semibold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                    {stat.value}
+                  </p>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
                   <p
                     className={cn(
@@ -772,22 +774,22 @@ export function DashboardFinancesOfflineDeposits() {
                         ) : (
                           <UserCircle2 className="h-5 w-5" />
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
-                        {email ? (
-                          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{email}</p>
-                        ) : null}
-                        {userType ? (
-                          <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                            {formatReadableLabel(userType)}
-                          </p>
-                        ) : null}
-                        {!email && !userType ? (
-                          <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">—</p>
-                        ) : null}
-                      </div>
-                    </div>
+	                      </div>
+	                      <div className="min-w-0">
+	                        <p className="break-words font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
+	                        {email ? (
+	                          <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{email}</p>
+	                        ) : null}
+	                        {userType ? (
+	                          <p className="mt-0.5 break-words text-[11px] text-slate-500 dark:text-slate-400">
+	                            {formatReadableLabel(userType)}
+	                          </p>
+	                        ) : null}
+	                        {!email && !userType ? (
+	                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">—</p>
+	                        ) : null}
+	                      </div>
+	                    </div>
 
                     <div className="col-span-4 min-w-0">
                       <p className="font-semibold text-slate-900 dark:text-slate-100 break-words">

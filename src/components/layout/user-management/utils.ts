@@ -30,6 +30,14 @@ export function formatDateTime(value: string | null) {
   })
 }
 
+export function formatLastSeen(value: string | null) {
+  if (!value) {
+    return '30+ days ago'
+  }
+
+  return formatDateTime(value)
+}
+
 export function formatDate(value: string | null) {
   if (!value) {
     return '—'

@@ -215,7 +215,7 @@ export function TenantsSection({
             {tenantsSummaryError}
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
             {tenantStatCards.map((card) => {
               const Icon = card.icon
 
@@ -317,7 +317,7 @@ export function TenantsSection({
                 No tenants match your filters.
               </div>
             ) : (
-              <ul className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-between">
+              <ul className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-start">
                 {filteredTenants.map((tenant) => {
                   const hasAmountToPay = tenant.amountToPay !== null
                   const hasDueOn = Boolean(tenant.dueOn)

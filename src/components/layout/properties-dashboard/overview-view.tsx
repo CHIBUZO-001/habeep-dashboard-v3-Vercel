@@ -227,7 +227,7 @@ export function OverviewDashboardView({
           </button>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
           {statCards.map((card) => {
             const Icon = card.icon
 

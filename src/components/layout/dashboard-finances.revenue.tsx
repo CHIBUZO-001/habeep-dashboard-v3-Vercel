@@ -205,7 +205,7 @@ export function DashboardFinancesRevenue() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: 'Total revenue',
@@ -258,7 +258,9 @@ export function DashboardFinancesRevenue() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 truncate text-2xl font-semibold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                    {stat.value}
+                  </p>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
                 </div>
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -354,7 +356,7 @@ export function DashboardFinancesRevenue() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.label}</p>
+                        <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.label}</p>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{percentFormatter.format(share)}</p>
                       </div>
                       <div className="text-right">

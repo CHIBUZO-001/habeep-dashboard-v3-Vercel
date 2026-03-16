@@ -198,7 +198,7 @@ export function AgentsSection({
             {agentsSummaryError}
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
             {agentStatCards.map((card) => {
               const Icon = card.icon
 
@@ -302,7 +302,7 @@ export function AgentsSection({
                 No agents match your filters.
               </div>
             ) : (
-              <ul className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-between">
+              <ul className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-start">
                 {filteredAgents.map((agent) => (
                   <li
                     key={agent.id}
