@@ -80,6 +80,7 @@ export const sidebarGroups: SidebarGroup[] = [
         children: [
           { id: 'finance-overview', label: 'Revenue', href: '/dashboard/finances' },
           { id: 'finance-wallet', label: 'Wallet', href: '/dashboard/finances/wallet' },
+          { id: 'finance-loans', label: 'Loans', href: '/dashboard/finances/loans' },
           { id: 'finance-offline-deposits', label: 'Offline Deposits', href: '/dashboard/finances/offline-deposits' },
         ],
       },

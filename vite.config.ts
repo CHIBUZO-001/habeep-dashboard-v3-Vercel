@@ -12,4 +12,33 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return
+          }
+
+          if (id.includes('lucide-react')) {
+            return 'icons'
+          }
+
+          if (id.includes('recharts') || id.includes('/d3-')) {
+            return 'charts'
+          }
+
+          if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) {
+            return 'react'
+          }
+
+          if (id.includes('/axios/')) {
+            return 'http'
+          }
+
+          return 'vendor'
+        },
+      },
+    },
+  },
 })

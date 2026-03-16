@@ -201,7 +201,7 @@ export function AnalyticsDashboardView({
           </button>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
           {analyticsStatCards.map((card) => {
             const Icon = card.icon
 

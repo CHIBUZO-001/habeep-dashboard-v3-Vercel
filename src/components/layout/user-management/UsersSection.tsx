@@ -8,7 +8,7 @@ import { UserAvatar } from './avatars'
 import {
   USERS_PAGE_SIZE,
   buildPaginationItems,
-  formatDateTime,
+  formatLastSeen,
   formatJoinedDate,
   getStatusClasses,
   getUserDisplayName,
@@ -123,7 +123,7 @@ export function UsersSection({
             {summaryError}
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
             {statCards.map((card) => {
               const Icon = card.icon
               return (
@@ -220,7 +220,7 @@ export function UsersSection({
                     <div className="flex items-center justify-between gap-3">
                       <span>Last Seen</span>
                       <span className="text-right text-slate-700 dark:text-slate-200">
-                        {formatDateTime(user.lastSeen)}
+                        {formatLastSeen(user.lastSeen)}
                       </span>
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export function UsersSection({
                       </td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{user.phoneNumber || 'No phone'}</td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{formatJoinedDate(user)}</td>
-                      <td className="py-3 text-slate-600 dark:text-slate-300">{formatDateTime(user.lastSeen)}</td>
+                      <td className="py-3 text-slate-600 dark:text-slate-300">{formatLastSeen(user.lastSeen)}</td>
                     </tr>
                   ))}
                 </tbody>

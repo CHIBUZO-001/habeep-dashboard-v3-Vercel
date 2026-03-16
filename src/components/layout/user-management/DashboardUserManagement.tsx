@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, useCallback, useEffect, useState } from 'react'
 
 import { getApiErrorMessage } from '../../../lib/http-client'
 import {
@@ -21,11 +21,14 @@ import {
 } from '../../../services'
 import { useToast } from '../../ui/toast-provider'
 
-import { AgentsSection } from './AgentsSection'
 import { AGENTS_PAGE_SIZE, LANDLORDS_PAGE_SIZE, TENANTS_PAGE_SIZE, USERS_PAGE_SIZE } from './utils'
-import { LandlordsSection } from './LandlordsSection'
-import { TenantsSection } from './TenantsSection'
-import { UsersSection } from './UsersSection'
+
+const UsersSection = lazy(() => import('./UsersSection').then((module) => ({ default: module.UsersSection })))
+const TenantsSection = lazy(() => import('./TenantsSection').then((module) => ({ default: module.TenantsSection })))
+const AgentsSection = lazy(() => import('./AgentsSection').then((module) => ({ default: module.AgentsSection })))
+const LandlordsSection = lazy(() =>
+  import('./LandlordsSection').then((module) => ({ default: module.LandlordsSection })),
+)
 
 export type DashboardUserManagementProps = {
   section: 'users' | 'tenants' | 'agents' | 'landlords'

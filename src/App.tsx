@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 
-import { LoginPage } from './components/auth/login-page'
-import { DashboardShell } from './components/layout/dashboard-shell'
 import { ThemeProvider } from './components/theme/theme-provider'
 import { ToastProvider } from './components/ui/toast-provider'
 import { getAccessToken } from './lib/session'
+
+const LoginPage = lazy(() =>
+  import('./components/auth/login-page').then((module) => ({ default: module.LoginPage })),
+)
+const DashboardShell = lazy(() =>
+  import('./components/layout/dashboard-shell').then((module) => ({ default: module.DashboardShell })),
+)
 
 type AppPage = 'dashboard' | 'login'
 
@@ -96,11 +101,19 @@ function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        {page === 'login' ? (
-          <LoginPage onBackToDashboard={goToDashboard} onLoginSuccess={goToDashboard} />
-        ) : (
-          <DashboardShell onLogout={goToLogin} />
-        )}
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+              Loading...
+            </div>
+          }
+        >
+          {page === 'login' ? (
+            <LoginPage onBackToDashboard={goToDashboard} onLoginSuccess={goToDashboard} />
+          ) : (
+            <DashboardShell onLogout={goToLogin} />
+          )}
+        </Suspense>
       </ToastProvider>
     </ThemeProvider>
   )
