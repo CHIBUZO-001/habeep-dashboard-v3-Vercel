@@ -65,6 +65,9 @@ export function DashboardFinancesWallet() {
   const [walletSummary, setWalletSummary] = useState<FinancialWalletActivitiesSummary | null>(null)
   const [isWalletLoading, setIsWalletLoading] = useState(true)
   const [walletErrorMessage, setWalletErrorMessage] = useState<string | null>(null)
+  const [walletSummaryRangeMode, setWalletSummaryRangeMode] = useState<'current' | 'previous'>('current')
+  const [previousWalletSummary, setPreviousWalletSummary] = useState<FinancialWalletActivitiesSummary | null>(null)
+  const [isPreviousWalletSummaryLoading, setIsPreviousWalletSummaryLoading] = useState(false)
 
   const [walletActivities, setWalletActivities] = useState<FinancialWalletActivity[]>([])
   const [walletPagination, setWalletPagination] = useState<FinancialWalletActivitiesPagination | null>(null)
@@ -86,6 +89,8 @@ export function DashboardFinancesWallet() {
       try {
         const nextSummary = await getFinancialWalletActivitiesSummary()
         setWalletSummary(nextSummary)
+        setWalletSummaryRangeMode('current')
+        setPreviousWalletSummary(null)
         setWalletErrorMessage(null)
       } catch (error) {
         const message = getApiErrorMessage(error, 'Failed to load wallet summary.')
@@ -107,6 +112,45 @@ export function DashboardFinancesWallet() {
   useEffect(() => {
     void loadWalletSummary()
   }, [loadWalletSummary])
+
+  const loadPreviousWalletSummary = useCallback(
+    async (showErrorToast = false) => {
+      const previousFrom = walletSummary?.range.previousFrom ?? null
+      const previousTo = walletSummary?.range.previousTo ?? null
+
+      if (!previousFrom || !previousTo) {
+        if (showErrorToast) {
+          toast({
+            variant: 'error',
+            title: 'Previous range unavailable',
+            description: 'There is no previous range available for this wallet summary yet.',
+          })
+        }
+        return null
+      }
+
+      setIsPreviousWalletSummaryLoading(true)
+
+      try {
+        const nextSummary = await getFinancialWalletActivitiesSummary({ from: previousFrom, to: previousTo })
+        setPreviousWalletSummary(nextSummary)
+        return nextSummary
+      } catch (error) {
+        const message = getApiErrorMessage(error, 'Failed to load previous wallet summary.')
+        if (showErrorToast) {
+          toast({
+            variant: 'error',
+            title: 'Previous wallet summary unavailable',
+            description: message,
+          })
+        }
+        return null
+      } finally {
+        setIsPreviousWalletSummaryLoading(false)
+      }
+    },
+    [toast, walletSummary],
+  )
 
   const loadWalletActivities = useCallback(
     async (showErrorToast = false, nextPage = walletPage) => {
@@ -151,7 +195,8 @@ export function DashboardFinancesWallet() {
     void loadWalletActivities(false, walletPage)
   }, [loadWalletActivities, walletPage])
 
-  const currencyCode = walletSummary?.currency || 'NGN'
+  const displayedWalletSummary = walletSummaryRangeMode === 'previous' ? previousWalletSummary : walletSummary
+  const currencyCode = displayedWalletSummary?.currency || walletSummary?.currency || 'NGN'
   const currencyFormatter = useMemo(() => createCurrencyFormatter(currencyCode), [currencyCode])
 
   const availableWalletTypes = useMemo(() => {
@@ -246,32 +291,92 @@ export function DashboardFinancesWallet() {
     [walletCurrentPage, walletTotalPages],
   )
 
-  const cards = walletSummary?.cards
+  const cards = displayedWalletSummary?.cards
   const range = walletSummary?.range
-  const isWalletRefreshing = isWalletLoading || isWalletActivitiesLoading
+  const isWalletRefreshing = isWalletLoading || isWalletActivitiesLoading || isPreviousWalletSummaryLoading
 
   return (
     <div className="space-y-6">
-      <section className="dashboard-enter flex flex-col gap-3 rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Wallet</h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Range: <span className="font-medium">{formatDateRange(range?.from ?? null, range?.to ?? null)}</span> · Previous:{' '}
-            <span className="font-medium">{formatDateRange(range?.previousFrom ?? null, range?.previousTo ?? null)}</span>
-          </p>
+      <section className="dashboard-enter rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80">
+        <div className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Wallet</h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Current:{' '}
+              <span
+                className={cn(
+                  'font-medium',
+                  walletSummaryRangeMode === 'current' && 'text-slate-900 dark:text-slate-100',
+                )}
+              >
+                {formatDateRange(range?.from ?? null, range?.to ?? null)}
+              </span>{' '}
+              · Previous:{' '}
+              <span
+                className={cn(
+                  'font-medium',
+                  walletSummaryRangeMode === 'previous' && 'text-slate-900 dark:text-slate-100',
+                )}
+              >
+                {formatDateRange(range?.previousFrom ?? null, range?.previousTo ?? null)}
+              </span>
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              void loadWalletSummary(true)
+              void loadWalletActivities(true, walletCurrentPage)
+            }}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 sm:w-auto sm:px-3"
+          >
+            <RefreshCw className={cn('h-4 w-4', isWalletRefreshing && 'animate-spin')} />
+            <span className="sr-only sm:not-sr-only">Refresh</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            void loadWalletSummary(true)
-            void loadWalletActivities(true, walletCurrentPage)
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
-        >
-          <RefreshCw className={cn('h-4 w-4', isWalletRefreshing && 'animate-spin')} />
-          Refresh
-        </button>
+        <div className="mt-3 inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-950">
+          <button
+            type="button"
+            onClick={() => setWalletSummaryRangeMode('current')}
+            disabled={isWalletLoading || isPreviousWalletSummaryLoading}
+            className={cn(
+              'inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+              walletSummaryRangeMode === 'current'
+                ? 'bg-blue-600 text-white shadow-sm shadow-slate-900/10'
+                : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900',
+            )}
+          >
+            Current
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (previousWalletSummary) {
+                setWalletSummaryRangeMode('previous')
+                return
+              }
+
+              void (async () => {
+                const nextSummary = await loadPreviousWalletSummary(true)
+                if (nextSummary) {
+                  setWalletSummaryRangeMode('previous')
+                }
+              })()
+            }}
+            disabled={isWalletLoading || isPreviousWalletSummaryLoading || !range?.previousFrom || !range?.previousTo}
+            className={cn(
+              'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+              walletSummaryRangeMode === 'previous'
+                ? 'bg-blue-600 text-white shadow-sm shadow-slate-900/10'
+                : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900',
+            )}
+          >
+            {isPreviousWalletSummaryLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : null}
+            Previous
+          </button>
+        </div>
       </section>
 
       {walletErrorMessage ? (
@@ -288,7 +393,7 @@ export function DashboardFinancesWallet() {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[
           {
             label: 'Total volume',
@@ -334,29 +439,27 @@ export function DashboardFinancesWallet() {
                       : 'dashboard-enter-delay-4',
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-                    {stat.value}
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-2 text-xs',
-                      typeof stat.changeRate === 'number'
-                        ? isPositiveChange
-                          ? 'text-emerald-600 dark:text-emerald-300'
-                          : 'text-rose-600 dark:text-rose-300'
-                        : 'text-slate-500 dark:text-slate-400',
-                    )}
-                  >
-                    Change: {changeRateLabel}
-                  </p>
-                </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <p className="min-w-0 text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:h-10 sm:w-10">
                   <Icon className="h-4 w-4" />
                 </span>
               </div>
+              <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                {stat.value}
+              </p>
+              <p
+                className={cn(
+                  'mt-2 text-xs',
+                  typeof stat.changeRate === 'number'
+                    ? isPositiveChange
+                      ? 'text-emerald-600 dark:text-emerald-300'
+                      : 'text-rose-600 dark:text-rose-300'
+                    : 'text-slate-500 dark:text-slate-400',
+                )}
+              >
+                Change: {changeRateLabel}
+              </p>
             </article>
           )
         })}

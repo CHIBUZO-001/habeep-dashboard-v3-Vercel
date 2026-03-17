@@ -1,8 +1,9 @@
-import { Activity, BadgeCheck, ChevronLeft, ChevronRight, RefreshCw, UserPlus, Users } from 'lucide-react'
-import { useMemo, type Dispatch, type SetStateAction } from 'react'
+import { Activity, BadgeCheck, ChevronLeft, ChevronRight, Clock, MoreHorizontal, RefreshCw, UserPlus, Users } from 'lucide-react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 
 import { cn } from '../../../lib/cn'
 import type { UserBaseList, UserBaseSummary } from '../../../services'
+import { UserTransactionsModal } from '../../overlays/user-transactions-modal'
 
 import { UserAvatar } from './avatars'
 import {
@@ -49,6 +50,47 @@ export function UsersSection({
   currentPage,
   onPageChange,
 }: UsersSectionProps) {
+  const [actionMenuUserId, setActionMenuUserId] = useState<string | null>(null)
+  const [txHistoryUserId, setTxHistoryUserId] = useState<string | null>(null)
+  const [txHistoryTitle, setTxHistoryTitle] = useState<string>('User transaction history')
+
+  useEffect(() => {
+    if (!actionMenuUserId) {
+      return
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('[data-user-management-action-menu]')) {
+        return
+      }
+
+      setActionMenuUserId(null)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [actionMenuUserId])
+
+  useEffect(() => {
+    if (!actionMenuUserId) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionMenuUserId(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [actionMenuUserId])
+
   const statCards = useMemo<UserStatCard[]>(() => {
     const currentSummary = summary ?? {
       totalUsers: 0,
@@ -103,18 +145,18 @@ export function UsersSection({
   return (
     <div className="space-y-4">
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-1')}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <div className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">User Summary</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from users summary.</p>
           </div>
           <button
             type="button"
             onClick={onRefreshSummary}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isSummaryLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </div>
 
@@ -148,8 +190,8 @@ export function UsersSection({
       </section>
 
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-2')}>
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <header className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Users Directory</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {totalUsers > 0
@@ -160,10 +202,10 @@ export function UsersSection({
           <button
             type="button"
             onClick={onRefreshList}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isListLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </header>
 
@@ -203,10 +245,10 @@ export function UsersSection({
                       )}
                     >
                       {user.status || 'unknown'}
-                    </span>
-                  </div>
+                      </span>
+                    </div>
 
-                  <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <div className="flex items-center justify-between gap-3">
                       <span>Phone</span>
                       <span className="text-right text-slate-700 dark:text-slate-200">
@@ -224,6 +266,48 @@ export function UsersSection({
                       </span>
                     </div>
                   </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3 text-[11px] text-slate-500 dark:border-slate-800/70 dark:text-slate-400">
+                    <p className="truncate">User ID: {user.id}</p>
+
+                    <div className="relative shrink-0" data-user-management-action-menu>
+                      <button
+                        type="button"
+                        onClick={() => setActionMenuUserId((previousId) => (previousId === user.id ? null : user.id))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                        aria-haspopup="menu"
+                        aria-expanded={actionMenuUserId === user.id}
+                        aria-label={`Open actions for ${getUserDisplayName(user)}`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+
+                      <div
+                        className={cn(
+                          'absolute bottom-full right-0 z-20 mb-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl transition-all dark:border-slate-800 dark:bg-slate-900',
+                          actionMenuUserId === user.id
+                            ? 'visible translate-y-0 opacity-100'
+                            : 'invisible translate-y-1 opacity-0',
+                        )}
+                        role="menu"
+                        aria-label="User actions"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActionMenuUserId(null)
+                            setTxHistoryUserId(user.id)
+                            setTxHistoryTitle(`Tx History · ${getUserDisplayName(user)}`)
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                          role="menuitem"
+                        >
+                          <Clock className="h-4 w-4" />
+                          View Tx History
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -237,6 +321,7 @@ export function UsersSection({
                     <th className="pb-3 font-medium">Phone</th>
                     <th className="pb-3 font-medium">Date Joined</th>
                     <th className="pb-3 font-medium">Last Seen</th>
+                    <th className="pb-3 font-medium" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -268,6 +353,47 @@ export function UsersSection({
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{user.phoneNumber || 'No phone'}</td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{formatJoinedDate(user)}</td>
                       <td className="py-3 text-slate-600 dark:text-slate-300">{formatLastSeen(user.lastSeen)}</td>
+                      <td className="py-3 text-right">
+                        <div className="relative inline-flex" data-user-management-action-menu>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActionMenuUserId((previousId) => (previousId === user.id ? null : user.id))
+                            }
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                            aria-haspopup="menu"
+                            aria-expanded={actionMenuUserId === user.id}
+                            aria-label={`Open actions for ${getUserDisplayName(user)}`}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+
+                          <div
+                            className={cn(
+                              'absolute bottom-full right-0 z-20 mb-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl transition-all dark:border-slate-800 dark:bg-slate-900',
+                              actionMenuUserId === user.id
+                                ? 'visible translate-y-0 opacity-100'
+                                : 'invisible translate-y-1 opacity-0',
+                            )}
+                            role="menu"
+                            aria-label="User actions"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionMenuUserId(null)
+                                setTxHistoryUserId(user.id)
+                                setTxHistoryTitle(`Tx History · ${getUserDisplayName(user)}`)
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                              role="menuitem"
+                            >
+                              <Clock className="h-4 w-4" />
+                              View Tx History
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -404,6 +530,14 @@ export function UsersSection({
           </>
         )}
       </section>
+
+      <UserTransactionsModal
+        open={Boolean(txHistoryUserId)}
+        userId={txHistoryUserId}
+        role="USER"
+        title={txHistoryTitle}
+        onClose={() => setTxHistoryUserId(null)}
+      />
     </div>
   )
 }

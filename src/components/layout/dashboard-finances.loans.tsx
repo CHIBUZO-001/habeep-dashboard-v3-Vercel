@@ -330,11 +330,15 @@ export function DashboardFinancesLoans() {
         loan.borrower?.name ?? '',
         loan.borrower?.username ?? '',
         loan.borrower?.email ?? '',
+        loan.landlord?.name ?? '',
+        loan.landlord?.username ?? '',
         loan.reference ?? '',
+        loan.userId ?? '',
+        loan.landlordId ?? '',
         loan.status,
         loan.type,
         loan.product ?? '',
-        loan.id,
+        loan.riskLevel ?? '',
       ]
         .join(' ')
         .toLowerCase()
@@ -373,27 +377,25 @@ export function DashboardFinancesLoans() {
   return (
     <div className="space-y-6">
       <section className="dashboard-enter flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Loans</h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">All-time overview across the platform.</p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                void loadLoansOverview(true)
-                void loadLoansPortfolio(true)
-                void loadLoansDistribution(true)
-                void loadLoans(true, currentPage)
-              }}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
-            >
-              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-              Refresh
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void loadLoansOverview(true)
+              void loadLoansPortfolio(true)
+              void loadLoansDistribution(true)
+              void loadLoans(true, currentPage)
+            }}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 sm:w-auto sm:px-3"
+          >
+            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            <span className="sr-only sm:not-sr-only">Refresh</span>
+          </button>
         </div>
       </section>
 
@@ -411,7 +413,7 @@ export function DashboardFinancesLoans() {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[
           {
             label: 'Total loans',
@@ -479,18 +481,16 @@ export function DashboardFinancesLoans() {
                       : 'dashboard-enter-delay-4',
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-                    {stat.value}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
-                </div>
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <p className="min-w-0 text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:h-10 sm:w-10">
                   <Icon className="h-5 w-5" />
                 </span>
               </div>
+              <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                {stat.value}
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
             </article>
           )
         })}
@@ -653,22 +653,22 @@ export function DashboardFinancesLoans() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="relative">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <label className="relative w-full sm:w-auto">
               <span className="sr-only">Search</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search borrower, reference..."
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 md:w-64"
+                placeholder="Search borrower, landlord, status..."
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 sm:w-64"
               />
             </label>
 
             <select
               value={typeFilter}
               onChange={(event) => setTypeFilter(event.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 sm:w-auto"
               aria-label="Filter type"
             >
               <option value="all">All types</option>
@@ -682,7 +682,7 @@ export function DashboardFinancesLoans() {
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 sm:w-auto"
               aria-label="Filter status"
             >
               <option value="all">All statuses</option>
@@ -718,6 +718,11 @@ export function DashboardFinancesLoans() {
               const email = loan.borrower?.email?.trim() || ''
               const avatarUrl = loan.borrower?.avatar?.trim() || ''
               const badgeClasses = getLoanStatusBadgeClasses(loan.status)
+              const landlordRawName = loan.landlord?.name?.trim() || ''
+              const landlordUsername = loan.landlord?.username?.trim() || ''
+              const landlordName = landlordRawName || landlordUsername
+              const landlordAvatarUrl = loan.landlord?.avatar?.trim() || ''
+              const landlordSecondary = landlordRawName && landlordUsername ? `@${landlordUsername}` : ''
 
               const typeLabel = formatReadableLabel(loan.type) || 'Loan'
               const metaSegments = [
@@ -730,24 +735,68 @@ export function DashboardFinancesLoans() {
                   key={loan.id}
                   className="rounded-2xl border border-slate-200/80 bg-white/70 p-5 shadow-sm shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-950/30"
                 >
-                  <header className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-                        ) : (
-                          <UserCircle2 className="h-5 w-5" />
-                        )}
-	                      </div>
-	                      <div className="min-w-0">
-	                        <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
-	                        <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
-	                          {email || metaSegments.join(' · ') || '—'}
-	                        </p>
-	                      </div>
+                  <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                            {avatarUrl ? (
+                              <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                            ) : (
+                              <UserCircle2 className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Borrower
+                            </p>
+                            <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {displayName}
+                            </p>
+                            {email ? (
+                              <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{email}</p>
+                            ) : (
+                              <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">—</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                            {landlordAvatarUrl ? (
+                              <img
+                                src={landlordAvatarUrl}
+                                alt={landlordName || 'Landlord'}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <UserCircle2 className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Landlord
+                            </p>
+                            <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {landlordName || '—'}
+                            </p>
+                            {landlordSecondary ? (
+                              <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
+                                {landlordSecondary}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    <span className={cn('inline-flex items-center justify-center rounded-lg border px-2.5 py-1 text-xs font-semibold', badgeClasses)}>
+                    <span
+                      className={cn(
+                        'inline-flex items-center justify-center rounded-lg border px-2.5 py-1 text-xs font-semibold',
+                        badgeClasses,
+                        'self-start',
+                      )}
+                    >
                       {formatReadableLabel(loan.status)}
                     </span>
                   </header>
@@ -757,6 +806,16 @@ export function DashboardFinancesLoans() {
                       <p className="text-xs text-slate-500 dark:text-slate-400">Loan</p>
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{typeLabel}</p>
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-words">{metaSegments.join(' · ') || '—'}</p>
+                      {loan.riskLevel?.trim() ? (
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          Risk: {formatReadableLabel(loan.riskLevel)}
+                        </p>
+                      ) : null}
+                      {typeof loan.repaymentProgress === 'number' ? (
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          Progress: {percentFormatter.format(loan.repaymentProgress / 100)}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="rounded-xl bg-slate-100/70 px-4 py-3 dark:bg-slate-900/40">
@@ -764,6 +823,21 @@ export function DashboardFinancesLoans() {
                       <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
                         {currencyFormatter.format(loan.principal)}
                       </p>
+                      {typeof loan.amountToPay === 'number' ? (
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          To pay: {currencyFormatter.format(loan.amountToPay)}
+                        </p>
+                      ) : null}
+                      {typeof loan.outstanding === 'number' ? (
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Outstanding: {currencyFormatter.format(loan.outstanding)}
+                        </p>
+                      ) : null}
+                      {typeof loan.monthlyPayment === 'number' ? (
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Monthly: {currencyFormatter.format(loan.monthlyPayment)}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         Due: {formatLoanTimestamp(loan.dueAt)}
                       </p>
@@ -772,6 +846,7 @@ export function DashboardFinancesLoans() {
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span>Created: {formatLoanTimestamp(loan.createdAt)}</span>
+                    {loan.disbursedAt?.trim() ? <span>Disbursed: {formatLoanTimestamp(loan.disbursedAt)}</span> : null}
                     {typeof loan.interestRate === 'number' ? (
                       <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-200">
                         <TrendingDown className="h-3.5 w-3.5" />
@@ -820,31 +895,63 @@ export function DashboardFinancesLoans() {
                 const email = loan.borrower?.email?.trim() || ''
                 const avatarUrl = loan.borrower?.avatar?.trim() || ''
                 const typeLabel = formatReadableLabel(loan.type) || 'Loan'
+                const landlordName = loan.landlord?.name?.trim() || loan.landlord?.username?.trim() || ''
+                const landlordAvatarUrl = loan.landlord?.avatar?.trim() || ''
                 const metaSegments = [
                   loan.product?.trim() ? formatReadableLabel(loan.product) : '',
                   loan.reference?.trim() ? loan.reference.trim() : '',
                 ].filter(Boolean)
                 const metaLabel = metaSegments.join(' · ')
+                const paymentSegments = [
+                  typeof loan.amountToPay === 'number' ? `To pay: ${currencyFormatter.format(loan.amountToPay)}` : '',
+                  typeof loan.outstanding === 'number' ? `Outstanding: ${currencyFormatter.format(loan.outstanding)}` : '',
+                  typeof loan.monthlyPayment === 'number' ? `Monthly: ${currencyFormatter.format(loan.monthlyPayment)}` : '',
+                ].filter(Boolean)
+                const paymentsLabel = paymentSegments.join(' · ')
+                const loanRiskSegments = [
+                  loan.riskLevel?.trim() ? `Risk: ${formatReadableLabel(loan.riskLevel)}` : '',
+                  typeof loan.repaymentProgress === 'number'
+                    ? `Progress: ${percentFormatter.format(loan.repaymentProgress / 100)}`
+                    : '',
+                ].filter(Boolean)
+                const loanRiskLabel = loanRiskSegments.join(' · ')
 
                 return (
                   <div key={loan.id} className="grid grid-cols-12 items-start gap-3 px-4 py-3 text-sm">
                     <div className="col-span-3 flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                      <div className="relative h-10 w-10 shrink-0">
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                          ) : (
+                            <UserCircle2 className="h-5 w-5" />
+                          )}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center overflow-hidden rounded-xl border border-white bg-slate-100 text-slate-500 shadow-sm shadow-slate-900/10 dark:border-slate-950 dark:bg-slate-800 dark:text-slate-300">
+                          {landlordAvatarUrl ? (
+                            <img
+                              src={landlordAvatarUrl}
+                              alt={landlordName || 'Landlord'}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <UserCircle2 className="h-3.5 w-3.5" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="break-words font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
+                        {email ? (
+                          <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{email}</p>
+                        ) : landlordName ? (
+                          <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-slate-400">
+                            Landlord: {landlordName}
+                          </p>
                         ) : (
-                          <UserCircle2 className="h-5 w-5" />
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">—</p>
                         )}
-	                      </div>
-	                      <div className="min-w-0">
-	                        <p className="break-words font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
-	                        {email ? (
-	                          <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{email}</p>
-	                        ) : (
-	                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">—</p>
-	                        )}
-	                      </div>
-	                    </div>
+                      </div>
+                    </div>
 
                     <div className="col-span-4 min-w-0">
                       <p className="font-semibold text-slate-900 dark:text-slate-100 break-words">{typeLabel}</p>
@@ -853,6 +960,12 @@ export function DashboardFinancesLoans() {
                         <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                           Rate: {loan.interestRate.toFixed(2)}%
                         </p>
+                      ) : null}
+                      {paymentsLabel ? (
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{paymentsLabel}</p>
+                      ) : null}
+                      {loanRiskLabel ? (
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{loanRiskLabel}</p>
                       ) : null}
                     </div>
 

@@ -1,5 +1,6 @@
 import { Clock3, CreditCard, RefreshCw, Search, TrendingUp, UserCircle2, Wallet, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { cn } from '../../lib/cn'
 import { getApiErrorMessage } from '../../lib/http-client'
@@ -103,6 +104,9 @@ export function DashboardFinancesOfflineDeposits() {
       return
     }
 
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setProofViewer(null)
@@ -112,6 +116,7 @@ export function DashboardFinancesOfflineDeposits() {
     window.addEventListener('keydown', handleEscape)
     return () => {
       window.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = previousOverflow
     }
   }, [proofViewer])
 
@@ -313,71 +318,91 @@ export function DashboardFinancesOfflineDeposits() {
 
   return (
     <div className="space-y-6">
-      {proofViewer ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-6">
-          <div
-            className="fixed inset-0 bg-slate-950/55 backdrop-blur-[2px]"
-            onClick={() => setProofViewer(null)}
-            aria-hidden="true"
-          />
-
-          <div
-            className="relative z-10 flex max-h-[calc(95dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:w-[min(96vw,56rem)]"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Proof viewer"
-            >
-            <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-              <div className="min-w-0">
-                <h3 className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{proofViewer.title}</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preview document proof.</p>
-              </div>
-
-              <button
-                type="button"
+      {proofViewer && typeof document !== 'undefined'
+        ? createPortal(
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-6">
+              <div
+                className="fixed inset-0 bg-slate-950/55 backdrop-blur-[2px]"
                 onClick={() => setProofViewer(null)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                aria-label="Close proof viewer"
+                aria-hidden="true"
+              />
+
+              <div
+                className="relative z-10 flex max-h-[calc(95dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:w-[min(96vw,56rem)]"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Proof viewer"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
+                <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+                  <div className="min-w-0">
+                    <h3 className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {proofViewer.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Preview document proof.</p>
+                  </div>
 
-            <div className="min-h-0 flex-1 overflow-auto p-4">
-              {proofViewerIsImage ? (
-                <img
-                  src={proofViewer.url}
-                  alt={proofViewer.title}
-                  className="mx-auto max-h-[75dvh] w-full rounded-xl object-contain"
-                />
-              ) : (
-                <iframe
-                  title={proofViewer.title}
-                  src={proofViewer.url}
-                  className="h-[75dvh] w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
-                />
-              )}
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => setProofViewer(null)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                    aria-label="Close proof viewer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </header>
+
+                <div className="min-h-0 flex-1 overflow-auto p-4">
+                  {proofViewerIsImage ? (
+                    <img
+                      src={proofViewer.url}
+                      alt={proofViewer.title}
+                      className="mx-auto max-h-[75dvh] w-full rounded-xl object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      title={proofViewer.title}
+                      src={proofViewer.url}
+                      className="h-[75dvh] w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      <section className="dashboard-enter rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80">
+        <div className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Offline Deposits</h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Range:{' '}
+              <span className="font-medium">
+                {formatDateRange(
+                  range?.from ?? (offlineFromDate ? `${offlineFromDate}T00:00:00.000Z` : null),
+                  range?.to ?? (offlineToDate ? `${offlineToDate}T23:59:59.999Z` : null),
+                )}
+              </span>{' '}
+              · Previous:{' '}
+              <span className="font-medium">{formatDateRange(range?.previousFrom ?? null, range?.previousTo ?? null)}</span>
+            </p>
           </div>
-        </div>
-      ) : null}
 
-      <section className="dashboard-enter flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm shadow-slate-900/5 ring-1 ring-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 dark:ring-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Offline Deposits</h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Range:{' '}
-            <span className="font-medium">
-              {formatDateRange(
-                range?.from ?? (offlineFromDate ? `${offlineFromDate}T00:00:00.000Z` : null),
-                range?.to ?? (offlineToDate ? `${offlineToDate}T23:59:59.999Z` : null),
-              )}
-            </span>{' '}
-            · Previous: <span className="font-medium">{formatDateRange(range?.previousFrom ?? null, range?.previousTo ?? null)}</span>
-          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void loadOfflineDepositsSummary(true)
+              void loadOfflineDeposits(true, offlineDepositsCurrentPage)
+            }}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 sm:w-auto sm:px-3"
+          >
+            <RefreshCw className={cn('h-4 w-4', isOfflineRefreshing && 'animate-spin')} />
+            <span className="sr-only sm:not-sr-only">Refresh</span>
+          </button>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
             From
             <input
@@ -409,18 +434,6 @@ export function DashboardFinancesOfflineDeposits() {
               className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
           </label>
-
-          <button
-            type="button"
-            onClick={() => {
-              void loadOfflineDepositsSummary(true)
-              void loadOfflineDeposits(true, offlineDepositsCurrentPage)
-            }}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
-          >
-            <RefreshCw className={cn('h-4 w-4', isOfflineRefreshing && 'animate-spin')} />
-            Refresh
-          </button>
         </div>
       </section>
 
@@ -438,7 +451,7 @@ export function DashboardFinancesOfflineDeposits() {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[
           {
             label: 'Pending review',
@@ -490,30 +503,28 @@ export function DashboardFinancesOfflineDeposits() {
                       : 'dashboard-enter-delay-4',
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-                    {stat.value}
-                  </p>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
-                  <p
-                    className={cn(
-                      'mt-2 text-xs',
-                      typeof stat.changeRate === 'number'
-                        ? isPositiveChange
-                          ? 'text-emerald-600 dark:text-emerald-300'
-                          : 'text-rose-600 dark:text-rose-300'
-                        : 'text-slate-500 dark:text-slate-400',
-                    )}
-                  >
-                    Change: {changeRateLabel}
-                  </p>
-                </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <p className="min-w-0 text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:h-10 sm:w-10">
                   <Icon className="h-4 w-4" />
                 </span>
               </div>
+              <p className="mt-2 break-words text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                {stat.value}
+              </p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{stat.hint}</p>
+              <p
+                className={cn(
+                  'mt-2 text-xs',
+                  typeof stat.changeRate === 'number'
+                    ? isPositiveChange
+                      ? 'text-emerald-600 dark:text-emerald-300'
+                      : 'text-rose-600 dark:text-rose-300'
+                    : 'text-slate-500 dark:text-slate-400',
+                )}
+              >
+                Change: {changeRateLabel}
+              </p>
             </article>
           )
         })}

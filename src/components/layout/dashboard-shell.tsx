@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react'
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
 import { findMenuById, findMenuIdByHref, getDefaultMenuId } from '../../data/sidebar-menus'
@@ -359,6 +358,7 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
           onToggleDesktopSidebar={() => setDesktopExpanded((previousState) => !previousState)}
           onOpenMobileSidebar={() => setMobileOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
+          onOpenAutomation={() => setAutomationModalOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           onProfileAction={handleProfileAction}
         />
@@ -390,50 +390,6 @@ export function DashboardShell({ onLogout }: DashboardShellProps) {
                 </div>
               ) : (
                 <>
-                  <section className="dashboard-enter rounded-2xl border border-blue-200/55 bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white shadow-xl shadow-blue-900/25 dark:border-blue-900/50">
-                    <div className="flex flex-col gap-4">
-                      <div className="min-w-0">
-                        <p className="text-sm text-white/85">Current workspace</p>
-                        <div className="mt-1 flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h2 className="truncate text-xl font-semibold sm:text-2xl">{activeLabel}</h2>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setAutomationModalOpen(true)}
-                            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-sm font-medium backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/25"
-                          >
-                            <Sparkles className="h-4 w-4" />
-                            New automation
-                          </button>
-                        </div>
-                        <p className="mt-2 text-sm text-white/90">
-                          Route: <span className="font-mono">{activeRoute}</span>
-                        </p>
-                        <p className="mt-1 text-xs text-white/80">
-                          Owner: {dashboardUser.name} · Role: {dashboardUser.role.replace('_', ' ')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 hidden flex-wrap gap-2 text-xs md:flex">
-                      <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
-                        Group: {activeGroupLabel}
-                      </span>
-                      <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
-                        Notifications: {unreadCount}
-                      </span>
-                      <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
-                        Sidebar: {desktopExpanded ? 'Expanded' : 'Collapsed'}
-                      </span>
-                      <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
-                        Shortcut: Ctrl/Cmd + K
-                      </span>
-                      <span className="rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur">
-                        Collapse: Ctrl/Cmd + B
-                      </span>
-                    </div>
-                  </section>
-
                   <Suspense fallback={<DashboardRouteFallback label={activeLabel} />}>
                     {isOverviewDashboardPage ? (
                       <DashboardOverview />

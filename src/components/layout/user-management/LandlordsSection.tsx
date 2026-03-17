@@ -6,16 +6,19 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Filter,
+  MoreHorizontal,
   Percent,
   RefreshCw,
   Search,
   Users,
 } from 'lucide-react'
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 
 import { cn } from '../../../lib/cn'
 import type { LandlordsList, LandlordsSummary } from '../../../services'
+import { LandlordTransactionsModal } from '../../overlays/landlord-transactions-modal'
 
 import { LandlordAvatar } from './avatars'
 import {
@@ -84,6 +87,46 @@ export function LandlordsSection({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortOption, setSortOption] = useState<LandlordSortOption>('name-asc')
+  const [actionMenuLandlordId, setActionMenuLandlordId] = useState<string | null>(null)
+  const [txHistoryLandlordId, setTxHistoryLandlordId] = useState<string | null>(null)
+  const [txHistoryTitle, setTxHistoryTitle] = useState<string>('Landlord transaction history')
+
+  useEffect(() => {
+    if (!actionMenuLandlordId) {
+      return
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('[data-user-management-action-menu]')) {
+        return
+      }
+
+      setActionMenuLandlordId(null)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [actionMenuLandlordId])
+
+  useEffect(() => {
+    if (!actionMenuLandlordId) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionMenuLandlordId(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [actionMenuLandlordId])
 
   const landlordStatCards = useMemo<LandlordStatCard[]>(() => {
     const currentSummary = landlordsSummary ?? {
@@ -220,18 +263,18 @@ export function LandlordsSection({
   return (
     <div className="space-y-6">
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-1')}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <div className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Landlord Summary</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from landlords summary.</p>
           </div>
           <button
             type="button"
             onClick={onRefreshSummary}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isLandlordsSummaryLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </div>
 
@@ -266,18 +309,18 @@ export function LandlordsSection({
       </section>
 
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-2')}>
-        <header className="flex flex-col gap-4 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800/70">
-          <div className="min-w-0">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-4 dark:border-slate-800/70 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Landlords Directory</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from landlords list.</p>
           </div>
           <button
             type="button"
             onClick={onRefreshList}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isLandlordsListLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </header>
 
@@ -371,58 +414,103 @@ export function LandlordsSection({
                     </span>
                   </div>
 
-                  <div className="mt-4 border-t border-slate-200/70 pt-4 dark:border-slate-800/70">
-                    <dl className="grid gap-3 text-xs">
-                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
-                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                          Phone
-                        </dt>
-                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
-                          {landlord.phone || '—'}
-                        </dd>
-                      </div>
+	                  <div className="mt-4 border-t border-slate-200/70 pt-4 dark:border-slate-800/70">
+	                    <dl className="grid gap-3 text-xs">
+	                      <div className="flex items-baseline justify-between gap-3">
+	                        <dt className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+	                          Phone
+	                        </dt>
+	                        <dd className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-slate-100">
+	                          {landlord.phone || '—'}
+	                        </dd>
+	                      </div>
 
-                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
-                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                          Units
-                        </dt>
-                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
-                          {numberFormatter.format(landlord.unitsCount)}
-                        </dd>
-                      </div>
+	                      <div className="flex items-baseline justify-between gap-3">
+	                        <dt className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+	                          Units
+	                        </dt>
+	                        <dd className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-slate-100">
+	                          {numberFormatter.format(landlord.unitsCount)}
+	                        </dd>
+	                      </div>
 
-                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
-                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                          Verified
-                        </dt>
-                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
-                          {landlord.verified ? 'Yes' : 'No'}
-                        </dd>
-                      </div>
+	                      <div className="flex items-baseline justify-between gap-3">
+	                        <dt className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+	                          Verified
+	                        </dt>
+	                        <dd className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-slate-100">
+	                          {landlord.verified ? 'Yes' : 'No'}
+	                        </dd>
+	                      </div>
 
-                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
-                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                          Registered
-                        </dt>
-                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
-                          {landlord.registered ? 'Yes' : 'No'}
-                        </dd>
-                      </div>
+	                      <div className="flex items-baseline justify-between gap-3">
+	                        <dt className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+	                          Registered
+	                        </dt>
+	                        <dd className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-slate-100">
+	                          {landlord.registered ? 'Yes' : 'No'}
+	                        </dd>
+	                      </div>
 
-                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
-                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                          Created
-                        </dt>
-                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
-                          {formatDate(landlord.createdAt)}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+	                      <div className="flex items-baseline justify-between gap-3">
+	                        <dt className="shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+	                          Created
+	                        </dt>
+	                        <dd className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-slate-100">
+	                          {formatDate(landlord.createdAt)}
+	                        </dd>
+	                      </div>
+	                    </dl>
+	                  </div>
+
+	                  <div className="mt-4 flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+	                    <p className="truncate">Landlord ID: {landlord.landlordId || '—'}</p>
+
+	                    <div className="relative shrink-0" data-user-management-action-menu>
+	                      <button
+	                        type="button"
+	                        onClick={() =>
+	                          setActionMenuLandlordId((previousId) => (previousId === landlord.id ? null : landlord.id))
+	                        }
+	                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+	                        aria-haspopup="menu"
+	                        aria-expanded={actionMenuLandlordId === landlord.id}
+	                        aria-label={`Open actions for ${getLandlordDisplayName(landlord)}`}
+	                      >
+	                        <MoreHorizontal className="h-4 w-4" />
+	                      </button>
+
+	                      <div
+	                        className={cn(
+	                          'absolute bottom-full right-0 z-20 mb-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl transition-all dark:border-slate-800 dark:bg-slate-900',
+	                          actionMenuLandlordId === landlord.id
+	                            ? 'visible translate-y-0 opacity-100'
+	                            : 'invisible translate-y-1 opacity-0',
+	                        )}
+	                        role="menu"
+	                        aria-label="Landlord actions"
+	                      >
+	                        <button
+	                          type="button"
+	                          onClick={() => {
+	                            setActionMenuLandlordId(null)
+	                            setTxHistoryLandlordId(landlord.landlordId)
+	                            setTxHistoryTitle(`Tx History · ${getLandlordDisplayName(landlord)}`)
+	                          }}
+	                          disabled={!landlord.landlordId}
+	                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+	                          role="menuitem"
+	                        >
+	                          <Clock className="h-4 w-4" />
+	                          View Tx History
+	                        </button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                  </li>
+	                ))}
+	              </ul>
+	            )}
 
             <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
               <div className="sm:hidden">
@@ -550,6 +638,13 @@ export function LandlordsSection({
           </>
         )}
       </section>
+
+      <LandlordTransactionsModal
+        open={Boolean(txHistoryLandlordId)}
+        landlordId={txHistoryLandlordId}
+        title={txHistoryTitle}
+        onClose={() => setTxHistoryLandlordId(null)}
+      />
     </div>
   )
 }
