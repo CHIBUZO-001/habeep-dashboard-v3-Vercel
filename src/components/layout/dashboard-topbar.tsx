@@ -7,6 +7,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Sparkles,
   Search,
   Settings,
   Users,
@@ -33,6 +34,7 @@ type DashboardTopbarProps = {
   onToggleDesktopSidebar: () => void
   onOpenMobileSidebar: () => void
   onOpenSearch: () => void
+  onOpenAutomation: () => void
   onOpenNotifications: () => void
   onProfileAction: (action: ProfileAction) => void
 }
@@ -46,6 +48,7 @@ export function DashboardTopbar({
   onToggleDesktopSidebar,
   onOpenMobileSidebar,
   onOpenSearch,
+  onOpenAutomation,
   onOpenNotifications,
   onProfileAction,
 }: DashboardTopbarProps) {
@@ -134,6 +137,16 @@ export function DashboardTopbar({
             aria-label="Open search"
           >
             <Search className="h-4 w-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenAutomation}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            aria-label="New automation"
+            title="New automation"
+          >
+            <Sparkles className="h-4 w-4" />
           </button>
 
           <button

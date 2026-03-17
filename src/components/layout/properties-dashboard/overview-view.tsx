@@ -220,10 +220,10 @@ export function OverviewDashboardView({
           <button
             type="button"
             onClick={onRefreshMetrics}
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isMetricsLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </div>
 
@@ -243,7 +243,10 @@ export function OverviewDashboardView({
                   </span>
                 </div>
 
-                <p className="mt-4 truncate text-2xl font-semibold text-slate-900 dark:text-slate-100" title={card.note}>
+                <p
+                  className="mt-4 text-2xl font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 md:line-clamp-1"
+                  title={card.note}
+                >
                   {card.value}
                 </p>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{card.note}</p>
@@ -276,8 +279,8 @@ export function OverviewDashboardView({
       </section>
 
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-3')}>
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <header className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Property Directory</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {totalProperties > 0
@@ -288,10 +291,10 @@ export function OverviewDashboardView({
           <button
             type="button"
             onClick={onRefreshList}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isListLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </header>
 

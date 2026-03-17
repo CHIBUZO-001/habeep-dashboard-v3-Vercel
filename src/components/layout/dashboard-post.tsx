@@ -845,7 +845,7 @@ export function DashboardPost() {
                   void loadPosts(true);
                 }}
                 disabled={isPostsLoading || isOverviewLoading}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
               >
                 <RefreshCw
                   className={cn(
@@ -853,7 +853,7 @@ export function DashboardPost() {
                     (isPostsLoading || isOverviewLoading) && "animate-spin",
                   )}
                 />
-                Refresh
+                <span className="sr-only sm:not-sr-only">Refresh</span>
               </button>
             </div>
           </header>

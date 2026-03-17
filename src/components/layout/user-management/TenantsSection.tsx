@@ -5,15 +5,18 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Filter,
+  MoreHorizontal,
   RefreshCw,
   Search,
   Users,
 } from 'lucide-react'
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 
 import { cn } from '../../../lib/cn'
 import type { TenantsList, TenantsSummary } from '../../../services'
+import { UserTransactionsModal } from '../../overlays/user-transactions-modal'
 
 import { TenantAvatar } from './avatars'
 import {
@@ -75,6 +78,46 @@ export function TenantsSection({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortOption, setSortOption] = useState<TenantSortOption>('name-asc')
+  const [actionMenuTenantId, setActionMenuTenantId] = useState<string | null>(null)
+  const [txHistoryUserId, setTxHistoryUserId] = useState<string | null>(null)
+  const [txHistoryTitle, setTxHistoryTitle] = useState<string>('Tenant transaction history')
+
+  useEffect(() => {
+    if (!actionMenuTenantId) {
+      return
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement && target.closest('[data-user-management-action-menu]')) {
+        return
+      }
+
+      setActionMenuTenantId(null)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [actionMenuTenantId])
+
+  useEffect(() => {
+    if (!actionMenuTenantId) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionMenuTenantId(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [actionMenuTenantId])
 
   const tenantStatCards = useMemo<TenantStatCard[]>(() => {
     const currentSummary = tenantsSummary ?? {
@@ -195,18 +238,18 @@ export function TenantsSection({
   return (
     <div className="space-y-6">
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-1')}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <div className="flex items-start justify-between gap-3 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tenant Summary</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from tenants summary.</p>
           </div>
           <button
             type="button"
             onClick={onRefreshSummary}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isTenantsSummaryLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </div>
 
@@ -241,18 +284,18 @@ export function TenantsSection({
       </section>
 
       <section className={cn(surfaceCardClass, 'dashboard-enter dashboard-enter-delay-2')}>
-        <header className="flex flex-col gap-4 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800/70">
-          <div className="min-w-0">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-4 dark:border-slate-800/70 sm:items-center">
+          <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tenants Directory</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Snapshot from tenants list.</p>
           </div>
           <button
             type="button"
             onClick={onRefreshList}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isTenantsListLoading && 'animate-spin')} />
-            Refresh
+            <span className="sr-only sm:not-sr-only">Refresh</span>
           </button>
         </header>
 
@@ -323,6 +366,7 @@ export function TenantsSection({
                   const hasDueOn = Boolean(tenant.dueOn)
                   const hasAmountOwed = tenant.amountOwed !== null
                   const hasWasDueOn = Boolean(tenant.wasDueOn)
+                  const tenantUserId = tenant.userIds[0] ?? null
 
                   return (
                     <li
@@ -413,6 +457,53 @@ export function TenantsSection({
                           </div>
                         ) : null}
                       </dl>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="truncate">
+                        Tenant ID: {tenant.tenantId || tenantUserId || tenant.iboId || tenant.id || '—'}
+                      </p>
+
+                      <div className="relative shrink-0" data-user-management-action-menu>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActionMenuTenantId((previousId) => (previousId === tenant.id ? null : tenant.id))
+                          }
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                          aria-haspopup="menu"
+                          aria-expanded={actionMenuTenantId === tenant.id}
+                          aria-label={`Open actions for ${getTenantDisplayName(tenant)}`}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+
+                        <div
+                          className={cn(
+                            'absolute bottom-full right-0 z-20 mb-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl transition-all dark:border-slate-800 dark:bg-slate-900',
+                            actionMenuTenantId === tenant.id
+                              ? 'visible translate-y-0 opacity-100'
+                              : 'invisible translate-y-1 opacity-0',
+                          )}
+                          role="menu"
+                          aria-label="Tenant actions"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActionMenuTenantId(null)
+                              setTxHistoryUserId(tenantUserId)
+                              setTxHistoryTitle(`Tx History · ${getTenantDisplayName(tenant)}`)
+                            }}
+                            disabled={!tenantUserId}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+                            role="menuitem"
+                          >
+                            <Clock className="h-4 w-4" />
+                            View Tx History
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </li>
                   )
@@ -546,6 +637,14 @@ export function TenantsSection({
           </>
         )}
       </section>
+
+      <UserTransactionsModal
+        open={Boolean(txHistoryUserId)}
+        userId={txHistoryUserId}
+        role="TENANT"
+        title={txHistoryTitle}
+        onClose={() => setTxHistoryUserId(null)}
+      />
     </div>
   )
 }

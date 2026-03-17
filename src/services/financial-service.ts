@@ -177,13 +177,23 @@ export type FinancialLoan = {
   id: string
   reference: string | null
   borrower: FinancialLoanBorrower | null
+  landlord: FinancialLoanBorrower | null
+  userId: string | null
+  landlordId: string | null
   principal: number
+  amountToPay: number | null
+  amountSettled: number | null
+  outstanding: number | null
+  monthlyPayment: number | null
   interestRate: number | null
+  creditScore: number | null
+  riskLevel: string | null
   status: string
   type: string
   product: string | null
   currency: string | null
   termMonths: number | null
+  repaymentProgress: number | null
   disbursedAt: string | null
   dueAt: string | null
   createdAt: string
@@ -456,6 +466,7 @@ type FinancialLoanRaw = {
   borrower?: unknown
   user?: unknown
   userId?: unknown
+  landlord?: unknown
   landlordId?: unknown
   principal?: unknown
   amount?: unknown
@@ -798,8 +809,11 @@ function normalizeWalletSummaryCards(value: unknown): FinancialWalletActivitiesS
   }
 }
 
-export async function getFinancialWalletActivitiesSummary() {
-  const rawDetails = await apiGet<FinancialWalletActivitiesSummaryRaw>('/api/financial/wallet-activities/summary')
+export async function getFinancialWalletActivitiesSummary(params?: { from: string; to: string }) {
+  const rawDetails = await apiGet<FinancialWalletActivitiesSummaryRaw>(
+    '/api/financial/wallet-activities/summary',
+    params ? { params } : undefined,
+  )
 
   return {
     range: normalizeWalletActivitiesRange(rawDetails.range),
@@ -1128,7 +1142,21 @@ function normalizeLoan(value: unknown): FinancialLoan | null {
     return null
   }
 
-  const id = toText(source.id) || toText(source._id)
+  const reference = toText(source.reference) || null
+  const userId = toText(source.userId) || null
+  const landlordId = toText(source.landlordId) || null
+  const type = toText(source.type)
+  const status = toText(source.status)
+  const principal = toNumber(source.principal ?? source.amount)
+  const createdAt = toText(source.createdAt ?? source.dateApplied)
+  const dueAt = toText(source.dueAt ?? source.dueDate) || null
+
+  const id =
+    toText(source.id) ||
+    toText(source._id) ||
+    reference ||
+    [userId, landlordId, type, status, createdAt, dueAt, String(principal)].filter(Boolean).join(':')
+
   if (!id) {
     return null
   }
@@ -1136,7 +1164,6 @@ function normalizeLoan(value: unknown): FinancialLoan | null {
   const borrower =
     normalizeLoanBorrower(source.borrower ?? source.user) ??
     (() => {
-      const userId = toText(source.userId)
       if (!userId) {
         return null
       }
@@ -1152,18 +1179,28 @@ function normalizeLoan(value: unknown): FinancialLoan | null {
 
   return {
     id,
-    reference: toText(source.reference) || null,
+    reference,
     borrower,
-    principal: toNumber(source.principal ?? source.amount),
+    landlord: normalizeLoanBorrower(source.landlord),
+    userId,
+    landlordId,
+    principal,
+    amountToPay: toNumberOrNull(source.amountToPay),
+    amountSettled: toNumberOrNull(source.amountSettled),
+    outstanding: toNumberOrNull(source.outstanding),
+    monthlyPayment: toNumberOrNull(source.monthlyPayment),
     interestRate: toNumberOrNull(source.interestRate ?? source.rate),
+    creditScore: toNumberOrNull(source.creditScore),
+    riskLevel: toText(source.riskLevel) || null,
     status: toText(source.status),
-    type: toText(source.type),
+    type,
     product: toText(source.product) || null,
     currency: toText(source.currency) || null,
     termMonths: toNumberOrNull(source.termMonths ?? source.durationMonths),
+    repaymentProgress: toNumberOrNull(source.repaymentProgress),
     disbursedAt: toText(source.disbursedAt ?? source.dateDisbursed) || null,
-    dueAt: toText(source.dueAt ?? source.dueDate) || null,
-    createdAt: toText(source.createdAt ?? source.dateApplied),
+    dueAt,
+    createdAt,
   } satisfies FinancialLoan
 }
 

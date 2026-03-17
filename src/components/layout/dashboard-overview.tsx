@@ -295,14 +295,16 @@ export function DashboardOverview() {
           return (
             <article key={stat.key} className={cn(surfaceCardClass, 'min-w-0')}>
               <div className="flex items-center justify-between">
-                <p className="min-w-0 truncate pr-2 text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
+                <p className="min-w-0 pr-2 text-sm text-slate-500 dark:text-slate-400 line-clamp-2 xl:line-clamp-1">
+                  {stat.label}
+                </p>
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
                   <Icon className="h-4 w-4" />
                 </span>
               </div>
 
               <p
-                className="mt-3 truncate text-lg font-semibold leading-tight sm:text-2xl"
+                className="mt-3 text-lg font-semibold leading-tight sm:text-2xl line-clamp-2 xl:line-clamp-1"
                 title={stat.value}
               >
                 {stat.value}
