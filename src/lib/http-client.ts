@@ -218,6 +218,22 @@ type ApiErrorPayload = {
   data?: unknown
 }
 
+function isGenericApiErrorMessage(message: string) {
+  const normalizedMessage = message.trim().toLowerCase()
+  if (!normalizedMessage) {
+    return true
+  }
+
+  return (
+    normalizedMessage === 'error occurred' ||
+    normalizedMessage === 'an error occurred' ||
+    normalizedMessage === 'request failed' ||
+    normalizedMessage === 'request unsuccessful' ||
+    normalizedMessage === 'operation failed' ||
+    normalizedMessage === 'failed'
+  )
+}
+
 export function getApiErrorMessage(error: unknown, fallback = 'Request failed. Try again.') {
   if (axios.isAxiosError<ApiErrorPayload>(error)) {
     const payload = error.response?.data
@@ -300,7 +316,13 @@ export function getApiErrorMessage(error: unknown, fallback = 'Request failed. T
     }
 
     const messageValue = typeof payload?.message === 'string' ? payload.message.trim() : ''
-    return messageValue || payload?.error || fallback
+    const errorValue = typeof payload?.error === 'string' ? payload.error.trim() : ''
+
+    if (errorValue && isGenericApiErrorMessage(messageValue)) {
+      return errorValue
+    }
+
+    return messageValue || errorValue || fallback
   }
 
   if (error instanceof Error && error.message) {

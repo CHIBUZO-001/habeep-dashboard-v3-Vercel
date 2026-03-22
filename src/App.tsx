@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 
 import { ThemeProvider } from './components/theme/theme-provider'
 import { ToastProvider } from './components/ui/toast-provider'
-import { getAccessToken } from './lib/session'
+import { AUTH_SESSION_EVENT, getAccessToken } from './lib/session'
 
 const LoginPage = lazy(() =>
   import('./components/auth/login-page').then((module) => ({ default: module.LoginPage })),
@@ -67,18 +67,34 @@ function App() {
   const [page, setPage] = useState<AppPage>(getInitialPage)
 
   useEffect(() => {
-    const handlePopstate = () => {
+    const syncPageWithSession = (replace = false) => {
       const hasSession = Boolean(getAccessToken())
       const routeState = resolveAuthRoute(window.location.pathname, hasSession)
       if (window.location.pathname !== routeState.path) {
-        navigateTo(routeState.path, true)
+        navigateTo(routeState.path, replace)
       }
       setPage(routeState.page)
     }
 
+    const handlePopstate = () => {
+      syncPageWithSession(true)
+    }
+
+    const handleStorage = () => {
+      syncPageWithSession(true)
+    }
+
+    const handleAuthSessionChange = () => {
+      syncPageWithSession(true)
+    }
+
     window.addEventListener('popstate', handlePopstate)
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener(AUTH_SESSION_EVENT, handleAuthSessionChange)
     return () => {
       window.removeEventListener('popstate', handlePopstate)
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener(AUTH_SESSION_EVENT, handleAuthSessionChange)
     }
   }, [])
 
