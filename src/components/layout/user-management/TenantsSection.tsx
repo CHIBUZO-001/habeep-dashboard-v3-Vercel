@@ -366,7 +366,10 @@ export function TenantsSection({
                   const hasDueOn = Boolean(tenant.dueOn)
                   const hasAmountOwed = tenant.amountOwed !== null
                   const hasWasDueOn = Boolean(tenant.wasDueOn)
+                  const hasAccruedGainsMinor = tenant.accruedGainsMinor !== null
                   const tenantUserId = tenant.userIds[0] ?? null
+                  const savingsCurrency = tenant.savedRentCurrency ?? tenant.rentCurrency ?? 'NGN'
+                  const secondaryIdentityLine = tenant.email || 'No email provided'
 
                   return (
                     <li
@@ -381,7 +384,7 @@ export function TenantsSection({
                             {getTenantDisplayName(tenant)}
                           </p>
                           <p className="mt-0.5 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">
-                            {tenant.email || 'No email provided'}
+                            {secondaryIdentityLine}
                           </p>
                         </div>
                       </div>
@@ -413,6 +416,54 @@ export function TenantsSection({
                           </dd>
                         </div>
 
+                        <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                          <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                            Savings wallet
+                          </dt>
+                          <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                            {tenant.hasSavingsWallet ? 'Enabled' : 'Disabled'}
+                          </dd>
+                        </div>
+
+                        <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                          <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                            Saved rent
+                          </dt>
+                          <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                            {formatCurrencyValue(tenant.savedRent, savingsCurrency)}
+                            {tenant.savedRent !== null ? (
+                              <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                                {savingsCurrency}
+                              </span>
+                            ) : null}
+                          </dd>
+                        </div>
+
+                        <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                          <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                            Accrued gains
+                          </dt>
+                          <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                            {formatCurrencyValue(tenant.accruedGains, savingsCurrency)}
+                            {tenant.accruedGains !== null ? (
+                              <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                                {savingsCurrency}
+                              </span>
+                            ) : null}
+                          </dd>
+                        </div>
+
+                        {hasAccruedGainsMinor ? (
+                          <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                            <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                              Accrued gains minor
+                            </dt>
+                            <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                              {numberFormatter.format(tenant.accruedGainsMinor ?? 0)}
+                            </dd>
+                          </div>
+                        ) : null}
+
                         {hasAmountToPay ? (
                           <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
                             <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
@@ -420,6 +471,9 @@ export function TenantsSection({
                             </dt>
                             <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
                               {formatCurrencyValue(tenant.amountToPay, tenant.rentCurrency)}
+                              <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                                {tenant.rentCurrency}
+                              </span>
                             </dd>
                           </div>
                         ) : null}
@@ -442,6 +496,9 @@ export function TenantsSection({
                             </dt>
                             <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
                               {formatCurrencyValue(tenant.amountOwed, tenant.rentCurrency)}
+                              <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                                {tenant.rentCurrency}
+                              </span>
                             </dd>
                           </div>
                         ) : null}
@@ -459,11 +516,7 @@ export function TenantsSection({
                       </dl>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                      <p className="truncate">
-                        Tenant ID: {tenant.tenantId || tenantUserId || tenant.iboId || tenant.id || '—'}
-                      </p>
-
+                    <div className="mt-4 flex items-center justify-end gap-3 text-[11px] text-slate-500 dark:text-slate-400">
                       <div className="relative shrink-0" data-user-management-action-menu>
                         <button
                           type="button"
