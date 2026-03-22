@@ -19,6 +19,11 @@ export type UserBaseListItem = {
   createdAt: string
   phoneNumber: string
   status: string
+  hasSavingsWallet: boolean
+  savedRent: number | null
+  savedRentCurrency: string | null
+  accruedGainsMinor: number | null
+  accruedGains: number | null
 }
 
 export type UserBaseList = {
@@ -84,6 +89,11 @@ export type AgentsListItem = {
   profileImage: string
   housesUploadedCount: number
   tenantsCount: number
+  hasSavingsWallet: boolean
+  savedRent: number | null
+  savedRentCurrency: string | null
+  accruedGainsMinor: number | null
+  accruedGains: number | null
 }
 
 export type AgentsList = {
@@ -109,6 +119,11 @@ export type TenantsListItem = {
   amountOwed: number | null
   wasDueOn: string | null
   rentCurrency: string
+  hasSavingsWallet: boolean
+  savedRent: number | null
+  savedRentCurrency: string | null
+  accruedGainsMinor: number | null
+  accruedGains: number | null
 }
 
 export type TenantsList = {
@@ -362,10 +377,17 @@ function normalizeUserBaseListItem(item: unknown): UserBaseListItem | null {
     createdAt: toString(source.createdAt),
     phoneNumber: toString(source.phoneNumber),
     status: toString(source.status) || 'unknown',
+    hasSavingsWallet: toBoolean(source.hasSavingsWallet),
+    savedRent: toNumberOrNull(source.savedRent),
+    savedRentCurrency: toText(source.savedRentCurrency) || null,
+    accruedGainsMinor: toNumberOrNull(source.accruedGainsMinor),
+    accruedGains: toNumberOrNull(source.accruedGains),
   }
 }
 
 type TenantsListItemRaw = {
+  id?: unknown
+  _id?: unknown
   rentStatus?: unknown
   username?: unknown
   email?: unknown
@@ -380,9 +402,16 @@ type TenantsListItemRaw = {
   amountOwed?: unknown
   wasDueOn?: unknown
   rentCurrency?: unknown
+  hasSavingsWallet?: unknown
+  savedRent?: unknown
+  savedRentCurrency?: unknown
+  accruedGainsMinor?: unknown
+  accruedGains?: unknown
 }
 
 type AgentsListItemRaw = {
+  id?: unknown
+  _id?: unknown
   status?: unknown
   agentId?: unknown
   userId?: unknown
@@ -393,6 +422,11 @@ type AgentsListItemRaw = {
   profileImage?: unknown
   housesUploadedCount?: unknown
   tenantsCount?: unknown
+  hasSavingsWallet?: unknown
+  savedRent?: unknown
+  savedRentCurrency?: unknown
+  accruedGainsMinor?: unknown
+  accruedGains?: unknown
 }
 
 type LandlordsListItemRaw = {
@@ -439,10 +473,14 @@ function normalizeAgentsListItem(item: unknown): AgentsListItem | null {
     return null
   }
 
+  const rawId = toText(source.id) || toText(source._id)
   const agentId = toText(source.agentId)
   const userId = toText(source.userId)
   const iboId = toText(source.iboId)
-  const id = agentId || userId || iboId
+  const email = toText(source.email)
+  const username = toText(source.username)
+  const phone = toText(source.phone)
+  const id = agentId || userId || iboId || rawId || email || username || phone
 
   if (!id) {
     return null
@@ -454,12 +492,17 @@ function normalizeAgentsListItem(item: unknown): AgentsListItem | null {
     agentId,
     userId,
     iboId,
-    username: toText(source.username),
-    email: toText(source.email),
-    phone: toText(source.phone),
+    username,
+    email,
+    phone,
     profileImage: toText(source.profileImage),
     housesUploadedCount: toNumber(source.housesUploadedCount),
     tenantsCount: toNumber(source.tenantsCount),
+    hasSavingsWallet: toBoolean(source.hasSavingsWallet),
+    savedRent: toNumberOrNull(source.savedRent),
+    savedRentCurrency: toText(source.savedRentCurrency) || null,
+    accruedGainsMinor: toNumberOrNull(source.accruedGainsMinor),
+    accruedGains: toNumberOrNull(source.accruedGains),
   } satisfies AgentsListItem
 }
 
@@ -501,10 +544,14 @@ function normalizeTenantsListItem(item: unknown): TenantsListItem | null {
     return null
   }
 
+  const rawId = toText(source.id) || toText(source._id)
   const tenantId = toText(source.tenantId)
   const userIds = toStringArray(source.userId)
   const iboId = toText(source.iboId)
-  const id = tenantId || userIds[0] || iboId
+  const email = toText(source.email)
+  const username = toText(source.username)
+  const phone = toText(source.phone)
+  const id = tenantId || userIds[0] || iboId || rawId || email || username || phone
 
   if (!id) {
     return null
@@ -517,10 +564,10 @@ function normalizeTenantsListItem(item: unknown): TenantsListItem | null {
   return {
     id,
     rentStatus: toText(source.rentStatus) || 'unknown',
-    username: toText(source.username),
-    email: toText(source.email),
+    username,
+    email,
     location: toText(source.location),
-    phone: toText(source.phone),
+    phone,
     tenantId,
     userIds,
     iboId,
@@ -530,6 +577,11 @@ function normalizeTenantsListItem(item: unknown): TenantsListItem | null {
     amountOwed: toNumberOrNull(source.amountOwed),
     wasDueOn: wasDueOn || null,
     rentCurrency: currency,
+    hasSavingsWallet: toBoolean(source.hasSavingsWallet),
+    savedRent: toNumberOrNull(source.savedRent),
+    savedRentCurrency: toText(source.savedRentCurrency) || null,
+    accruedGainsMinor: toNumberOrNull(source.accruedGainsMinor),
+    accruedGains: toNumberOrNull(source.accruedGains),
   } satisfies TenantsListItem
 }
 

@@ -14,17 +14,18 @@ export type PaginationItem = number | 'start-ellipsis' | 'end-ellipsis'
 
 export function formatDateTime(value: string | null) {
   if (!value) {
-    return 'Never'
+    return ''
   }
 
   const parsedTime = new Date(value)
   if (Number.isNaN(parsedTime.getTime())) {
-    return 'Unknown time'
+    return value
   }
 
   return parsedTime.toLocaleString('en-NG', {
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -32,15 +33,15 @@ export function formatDateTime(value: string | null) {
 
 export function formatLastSeen(value: string | null) {
   if (!value) {
-    return '30+ days ago'
+    return '100+ days'
   }
 
-  return formatDateTime(value)
+  return formatCompactDate(value)
 }
 
 export function formatDate(value: string | null) {
   if (!value) {
-    return '—'
+    return '30+ days'
   }
 
   const parsedTime = new Date(value)
@@ -71,16 +72,33 @@ export function formatCurrencyValue(value: number | null, currencyCode = 'NGN') 
   }
 }
 
+function formatCompactDate(value: string | null) {
+  if (!value) {
+    return 'Unknown date'
+  }
+
+  const parsedTime = new Date(value)
+  if (Number.isNaN(parsedTime.getTime())) {
+    return value
+  }
+
+  return parsedTime.toLocaleDateString('en-NG', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  })
+}
+
 export function formatJoinedDate(user: UserBaseListItem) {
   if (user.dateJoined) {
-    return user.dateJoined
+    return formatCompactDate(user.dateJoined)
   }
 
   if (!user.createdAt) {
     return 'Unknown date'
   }
 
-  return formatDateTime(user.createdAt)
+  return formatCompactDate(user.createdAt)
 }
 
 export function getUserDisplayName(user: UserBaseListItem) {
@@ -106,7 +124,7 @@ export function getUserInitials(user: UserBaseListItem) {
 }
 
 export function getTenantDisplayName(tenant: TenantsListItem) {
-  return tenant.username || tenant.email || tenant.userIds[0] || tenant.tenantId || tenant.id || 'Unknown tenant'
+  return tenant.username || tenant.email || tenant.phone || tenant.tenantId || tenant.userIds[0] || tenant.iboId || tenant.id || 'Unknown tenant'
 }
 
 export function getAgentDisplayName(agent: AgentsListItem) {

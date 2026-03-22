@@ -22,6 +22,7 @@ import { AgentAvatar } from './avatars'
 import {
   AGENTS_PAGE_SIZE,
   buildPaginationItems,
+  formatCurrencyValue,
   formatStatusLabel,
   getAgentDisplayName,
   getStatusClasses,
@@ -344,11 +345,15 @@ export function AgentsSection({
               </div>
             ) : (
               <ul className="mt-5 flex flex-wrap justify-center gap-4 sm:justify-start">
-                {filteredAgents.map((agent) => (
-                  <li
-                    key={agent.id}
-                    className="flex w-full max-w-[350px] flex-none flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-5 shadow-sm shadow-slate-900/5 transition-colors hover:bg-white/90 dark:border-slate-800 dark:bg-slate-950/40 dark:shadow-black/20 dark:hover:bg-slate-950/60"
-                  >
+                {filteredAgents.map((agent) => {
+                  const hasAccruedGainsMinor = agent.accruedGainsMinor !== null
+                  const savingsCurrency = agent.savedRentCurrency ?? 'NGN'
+
+                  return (
+                    <li
+                      key={agent.id}
+                      className="flex w-full max-w-[350px] flex-none flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-5 shadow-sm shadow-slate-900/5 transition-colors hover:bg-white/90 dark:border-slate-800 dark:bg-slate-950/40 dark:shadow-black/20 dark:hover:bg-slate-950/60"
+                    >
                   <div className="flex items-start justify-between gap-4 max-[400px]:flex-col max-[400px]:items-stretch">
                     <div className="flex min-w-0 items-center gap-4 max-[400px]:w-full">
                       <AgentAvatar agent={agent} className="h-12 w-12 shrink-0" />
@@ -400,6 +405,54 @@ export function AgentsSection({
                           {numberFormatter.format(agent.tenantsCount)}
                         </dd>
                       </div>
+
+                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                          Savings wallet
+                        </dt>
+                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                          {agent.hasSavingsWallet ? 'Enabled' : 'Disabled'}
+                        </dd>
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                          Saved rent
+                        </dt>
+                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                          {formatCurrencyValue(agent.savedRent, savingsCurrency)}
+                          {agent.savedRent !== null ? (
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                              {savingsCurrency}
+                            </span>
+                          ) : null}
+                        </dd>
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                          Accrued gains
+                        </dt>
+                        <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                          {formatCurrencyValue(agent.accruedGains, savingsCurrency)}
+                          {agent.accruedGains !== null ? (
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                              {savingsCurrency}
+                            </span>
+                          ) : null}
+                        </dd>
+                      </div>
+
+                      {hasAccruedGainsMinor ? (
+                        <div className="flex items-baseline justify-between gap-3 max-[400px]:flex-col max-[400px]:items-start">
+                          <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                            Accrued gains minor
+                          </dt>
+                          <dd className="text-right font-medium text-slate-900 dark:text-slate-100 max-[400px]:text-left">
+                            {numberFormatter.format(agent.accruedGainsMinor ?? 0)}
+                          </dd>
+                        </div>
+                      ) : null}
                     </dl>
                   </div>
 
@@ -450,7 +503,8 @@ export function AgentsSection({
                     </div>
                   </div>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
 
