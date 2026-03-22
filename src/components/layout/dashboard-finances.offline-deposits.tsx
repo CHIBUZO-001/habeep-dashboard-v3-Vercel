@@ -1,4 +1,4 @@
-import { Clock3, CreditCard, RefreshCw, Search, TrendingUp, UserCircle2, Wallet, X } from 'lucide-react'
+import { CheckCircle2, Clock3, CreditCard, LoaderCircle, RefreshCw, Search, TrendingUp, UserCircle2, Wallet, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -7,7 +7,10 @@ import { getApiErrorMessage } from '../../lib/http-client'
 import {
   getFinancialOfflineDeposits,
   getFinancialOfflineDepositsSummary,
+  submitFinancialOfflineDepositAction,
+  type FinancialOfflineDepositAction,
   type FinancialOfflineDepositActivity,
+  type FinancialOfflineDepositActionType,
   type FinancialOfflineDepositsPagination,
   type FinancialOfflineDepositsSummary,
 } from '../../services'
@@ -46,6 +49,50 @@ function formatOfflineDepositTimestamp(activity: FinancialOfflineDepositActivity
 
 function normalizeOfflineDepositStatus(inputStatus: string) {
   return inputStatus.trim().toUpperCase()
+}
+
+function isOfflineDepositActionable(status: string) {
+  const normalizedStatus = normalizeOfflineDepositStatus(status)
+  return normalizedStatus === 'PENDING' || normalizedStatus === 'IN_REVIEW'
+}
+
+function normalizeOfflineDepositActionType(inputType: string): FinancialOfflineDepositActionType | null {
+  const normalizedType = inputType.trim()
+  if (!normalizedType) {
+    return null
+  }
+
+  const condensedType = normalizedType.replace(/[\s_-]+/g, '').toLowerCase()
+  if (condensedType === 'wallet') {
+    return 'wallet'
+  }
+
+  if (condensedType === 'savings') {
+    return 'savings'
+  }
+
+  if (condensedType === 'registrationfee') {
+    return 'registrationFee'
+  }
+
+  if (condensedType === 'compoundfee') {
+    return 'compoundFee'
+  }
+
+  return null
+}
+
+function getOfflineDepositActionStatus(action: FinancialOfflineDepositAction) {
+  return action === 'ACCEPT' ? 'APPROVED' : 'DENIED'
+}
+
+type OfflineDepositProofViewer = {
+  depositId: string
+  url: string
+  title: string
+  mimeType: string | null
+  type: string
+  status: string
 }
 
 function getOfflineDepositStatusBadgeClasses(status: string) {
@@ -93,9 +140,12 @@ export function DashboardFinancesOfflineDeposits() {
   const [offlineSearchQuery, setOfflineSearchQuery] = useState('')
   const [offlineStatusFilter, setOfflineStatusFilter] = useState<'all' | 'pending' | 'verified' | 'denied'>('all')
   const [offlineTypeFilter, setOfflineTypeFilter] = useState('all')
-  const [proofViewer, setProofViewer] = useState<{ url: string; title: string; mimeType: string | null } | null>(
-    null,
-  )
+  const [proofViewer, setProofViewer] = useState<OfflineDepositProofViewer | null>(null)
+  const [offlineDepositActionState, setOfflineDepositActionState] = useState<{
+    depositId: string
+    action: FinancialOfflineDepositAction
+  } | null>(null)
+  const offlineDepositStatusOverridesRef = useRef<Record<string, string>>({})
 
   const { toast } = useToast()
 
@@ -169,7 +219,12 @@ export function DashboardFinancesOfflineDeposits() {
           return
         }
 
-        setOfflineDepositsActivities(response.activities)
+        setOfflineDepositsActivities(
+          response.activities.map((activity) => {
+            const overriddenStatus = offlineDepositStatusOverridesRef.current[activity.id]
+            return overriddenStatus ? { ...activity, status: overriddenStatus } : activity
+          }),
+        )
         setOfflineDepositsPagination(response.pagination)
         setOfflineDepositsActivitiesErrorMessage(null)
       } catch (error) {
@@ -229,7 +284,26 @@ export function DashboardFinancesOfflineDeposits() {
         return true
       }
 
-      return normalizeOfflineDepositStatus(activity.status) === offlineStatusFilter.toUpperCase()
+      const normalizedStatus = normalizeOfflineDepositStatus(activity.status)
+
+      if (offlineStatusFilter === 'pending') {
+        return normalizedStatus === 'PENDING' || normalizedStatus === 'IN_REVIEW'
+      }
+
+      if (offlineStatusFilter === 'verified') {
+        return normalizedStatus === 'VERIFIED' || normalizedStatus === 'APPROVED' || normalizedStatus === 'SUCCESSFUL'
+      }
+
+      if (offlineStatusFilter === 'denied') {
+        return (
+          normalizedStatus === 'DENIED' ||
+          normalizedStatus === 'DECLINED' ||
+          normalizedStatus === 'REJECTED' ||
+          normalizedStatus === 'FAILED'
+        )
+      }
+
+      return false
     }
 
     const matchesTypeFilter = (activity: FinancialOfflineDepositActivity) => {
@@ -289,10 +363,36 @@ export function DashboardFinancesOfflineDeposits() {
     [offlineDepositsCurrentPage, offlineDepositsTotalPages],
   )
 
+  const refreshOfflineDepositsData = useCallback(
+    async (showErrorToast = false) => {
+      await Promise.all([
+        loadOfflineDepositsSummary(showErrorToast),
+        loadOfflineDeposits(showErrorToast, offlineDepositsCurrentPage),
+      ])
+    },
+    [loadOfflineDeposits, loadOfflineDepositsSummary, offlineDepositsCurrentPage],
+  )
+
   const range = offlineDepositsSummary?.range
   const cards = offlineDepositsSummary?.cards
   const hasOfflineSummary = Boolean(offlineDepositsSummary)
   const isOfflineRefreshing = isOfflineDepositsLoading || isOfflineDepositsActivitiesLoading
+  const activeProofDeposit = useMemo(() => {
+    if (!proofViewer) {
+      return null
+    }
+
+    return offlineDepositsActivities.find((activity) => activity.id === proofViewer.depositId) ?? null
+  }, [offlineDepositsActivities, proofViewer])
+  const proofViewerStatus = activeProofDeposit?.status ?? proofViewer?.status ?? ''
+  const proofViewerActionType = useMemo(
+    () => normalizeOfflineDepositActionType(activeProofDeposit?.type ?? proofViewer?.type ?? ''),
+    [activeProofDeposit, proofViewer],
+  )
+  const proofViewerCanTakeAction = Boolean(proofViewer && proofViewerActionType && isOfflineDepositActionable(proofViewerStatus))
+  const isProofViewerActionLoading = Boolean(
+    proofViewer && offlineDepositActionState?.depositId === proofViewer.depositId,
+  )
 
   const proofViewerIsImage = useMemo(() => {
     if (!proofViewer) {
@@ -315,6 +415,57 @@ export function DashboardFinancesOfflineDeposits() {
       url.endsWith('.svg')
     )
   }, [proofViewer])
+
+  const handleOfflineDepositAction = useCallback(
+    async (action: FinancialOfflineDepositAction) => {
+      if (!proofViewer || !proofViewerActionType) {
+        return
+      }
+
+      const depositId = proofViewer.depositId
+      setOfflineDepositActionState({ depositId, action })
+
+      try {
+        const responseMessage = await submitFinancialOfflineDepositAction({
+          action,
+          type: proofViewerActionType,
+          depositId,
+        })
+
+        const nextStatus = getOfflineDepositActionStatus(action)
+        offlineDepositStatusOverridesRef.current[depositId] = nextStatus
+        setOfflineDepositsActivities((previousActivities) =>
+          previousActivities.map((activity) =>
+            activity.id === depositId ? { ...activity, status: nextStatus } : activity,
+          ),
+        )
+        setProofViewer(null)
+
+        toast({
+          variant: 'success',
+          title: action === 'ACCEPT' ? 'Deposit approved' : 'Deposit denied',
+          description: responseMessage || 'Offline deposit action completed successfully.',
+        })
+
+        void loadOfflineDepositsSummary(false)
+      } catch (error) {
+        const message = getApiErrorMessage(error, 'Failed to update offline deposit.')
+        toast({
+          variant: message.toLowerCase().includes('action has been taken on deposit') ? 'warning' : 'error',
+          title: action === 'ACCEPT' ? 'Approval failed' : 'Denial failed',
+          description: message,
+        })
+
+        if (message.toLowerCase().includes('action has been taken on deposit')) {
+          setProofViewer(null)
+          void refreshOfflineDepositsData(false)
+        }
+      } finally {
+        setOfflineDepositActionState((currentState) => (currentState?.depositId === depositId ? null : currentState))
+      }
+    },
+    [loadOfflineDepositsSummary, proofViewer, proofViewerActionType, refreshOfflineDepositsData, toast],
+  )
 
   return (
     <div className="space-y-6">
@@ -366,6 +517,63 @@ export function DashboardFinancesOfflineDeposits() {
                     />
                   )}
                 </div>
+
+                <footer className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          'inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-semibold',
+                          getOfflineDepositStatusBadgeClasses(proofViewerStatus),
+                        )}
+                      >
+                        {formatReadableLabel(proofViewerStatus || 'unknown')}
+                      </span>
+                      {proofViewerActionType ? (
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Type: {formatReadableLabel(proofViewerActionType)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-600 dark:text-amber-300">
+                          This deposit type cannot be actioned from this screen.
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {proofViewerCanTakeAction
+                        ? 'Review the proof and either approve or deny the offline payment.'
+                        : 'This deposit is no longer awaiting review.'}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleOfflineDepositAction('DENY')}
+                      disabled={!proofViewerCanTakeAction || isProofViewerActionLoading}
+                      className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:bg-rose-950/40"
+                    >
+                      {isProofViewerActionLoading && offlineDepositActionState?.action === 'DENY' ? (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      Deny payment
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleOfflineDepositAction('ACCEPT')}
+                      disabled={!proofViewerCanTakeAction || isProofViewerActionLoading}
+                      className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isProofViewerActionLoading && offlineDepositActionState?.action === 'ACCEPT' ? (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                      )}
+                      Approve payment
+                    </button>
+                  </div>
+                </footer>
               </div>
             </div>,
             document.body,
@@ -391,10 +599,7 @@ export function DashboardFinancesOfflineDeposits() {
 
           <button
             type="button"
-            onClick={() => {
-              void loadOfflineDepositsSummary(true)
-              void loadOfflineDeposits(true, offlineDepositsCurrentPage)
-            }}
+            onClick={() => void refreshOfflineDepositsData(true)}
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-0 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 sm:w-auto sm:px-3"
           >
             <RefreshCw className={cn('h-4 w-4', isOfflineRefreshing && 'animate-spin')} />
@@ -716,9 +921,12 @@ export function DashboardFinancesOfflineDeposits() {
                         type="button"
                         onClick={() =>
                           setProofViewer({
+                            depositId: activity.id,
                             url: proofUrl,
                             title: `Proof for ${displayName}`,
                             mimeType: activity.documentOfProof?.type ?? null,
+                            type: activity.type,
+                            status: activity.status,
                           })
                         }
                         className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -817,9 +1025,12 @@ export function DashboardFinancesOfflineDeposits() {
                           type="button"
                           onClick={() =>
                             setProofViewer({
+                              depositId: activity.id,
                               url: proofUrl,
                               title: `Proof for ${displayName}`,
                               mimeType: activity.documentOfProof?.type ?? null,
+                              type: activity.type,
+                              status: activity.status,
                             })
                           }
                           className="mt-1 inline-flex w-fit rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm shadow-slate-900/5 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"

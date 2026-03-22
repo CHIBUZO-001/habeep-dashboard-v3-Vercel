@@ -9,6 +9,7 @@ import { UserAvatar } from './avatars'
 import {
   USERS_PAGE_SIZE,
   buildPaginationItems,
+  formatCurrencyValue,
   formatLastSeen,
   formatJoinedDate,
   getStatusClasses,
@@ -245,10 +246,10 @@ export function UsersSection({
                       )}
                     >
                       {user.status || 'unknown'}
-                      </span>
-                    </div>
+                    </span>
+                  </div>
 
-                    <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <div className="flex items-center justify-between gap-3">
                       <span>Phone</span>
                       <span className="text-right text-slate-700 dark:text-slate-200">
@@ -263,6 +264,24 @@ export function UsersSection({
                       <span>Last Seen</span>
                       <span className="text-right text-slate-700 dark:text-slate-200">
                         {formatLastSeen(user.lastSeen)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Savings Wallet</span>
+                      <span className="text-right text-slate-700 dark:text-slate-200">
+                        {user.hasSavingsWallet ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Saved Rent</span>
+                      <span className="text-right text-slate-700 dark:text-slate-200">
+                        {formatCurrencyValue(user.savedRent, user.savedRentCurrency ?? 'NGN')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Accrued Gains</span>
+                      <span className="text-right text-slate-700 dark:text-slate-200">
+                        {formatCurrencyValue(user.accruedGains, user.savedRentCurrency ?? 'NGN')}
                       </span>
                     </div>
                   </div>
@@ -321,6 +340,9 @@ export function UsersSection({
                     <th className="pb-3 font-medium">Phone</th>
                     <th className="pb-3 font-medium">Date Joined</th>
                     <th className="pb-3 font-medium">Last Seen</th>
+                    <th className="pb-3 font-medium">Wallet</th>
+                    <th className="pb-3 font-medium">Saved Rent</th>
+                    <th className="pb-3 font-medium">Accrued Gains</th>
                     <th className="pb-3 font-medium" />
                   </tr>
                 </thead>
@@ -352,7 +374,25 @@ export function UsersSection({
                       </td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{user.phoneNumber || 'No phone'}</td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{formatJoinedDate(user)}</td>
-                      <td className="py-3 text-slate-600 dark:text-slate-300">{formatLastSeen(user.lastSeen)}</td>
+                      <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{formatLastSeen(user.lastSeen)}</td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={cn(
+                            'inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium',
+                            user.hasSavingsWallet
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
+                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                          )}
+                        >
+                          {user.hasSavingsWallet ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                        {formatCurrencyValue(user.savedRent, user.savedRentCurrency ?? 'NGN')}
+                      </td>
+                      <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                        {formatCurrencyValue(user.accruedGains, user.savedRentCurrency ?? 'NGN')}
+                      </td>
                       <td className="py-3 text-right">
                         <div className="relative inline-flex" data-user-management-action-menu>
                           <button
@@ -402,28 +442,40 @@ export function UsersSection({
 
             <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
               <div className="flex flex-col gap-3 sm:hidden">
-                <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-                  Page {numberFormatter.format(currentListPage)} of {numberFormatter.format(totalPages)}
-                </p>
-
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => onPageChange((previousPage) => Math.max(previousPage - 1, 1))}
                     disabled={currentListPage <= 1 || isListLoading}
-                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Prev
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <p className="min-w-[6.5rem] whitespace-nowrap text-center text-xs text-slate-500 dark:text-slate-400">
+                    Page {numberFormatter.format(currentListPage)} of {numberFormatter.format(totalPages)}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => onPageChange((previousPage) => Math.min(previousPage + 1, totalPages))}
+                    disabled={currentListPage >= totalPages || isListLoading}
+                    className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="mx-auto flex w-max items-center gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1 dark:border-slate-800 dark:bg-slate-950/40">
                     {mobilePaginationItems.map((item) => {
                       if (typeof item !== 'number') {
                         return (
                           <span
                             key={item}
-                            className="inline-flex h-9 min-w-7 items-center justify-center px-1 text-sm font-medium text-slate-400 dark:text-slate-500"
+                            className="inline-flex h-9 min-w-8 shrink-0 items-center justify-center px-1 text-sm font-medium text-slate-400 dark:text-slate-500"
                           >
                             ...
                           </span>
@@ -440,7 +492,7 @@ export function UsersSection({
                           disabled={isListLoading}
                           aria-current={isActivePage ? 'page' : undefined}
                           className={cn(
-                            'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                            'inline-flex h-9 min-w-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                             isActivePage
                               ? 'bg-blue-600 text-white shadow-sm shadow-blue-900/20'
                               : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800',
@@ -451,16 +503,6 @@ export function UsersSection({
                       )
                     })}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => onPageChange((previousPage) => Math.min(previousPage + 1, totalPages))}
-                    disabled={currentListPage >= totalPages || isListLoading}
-                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
 

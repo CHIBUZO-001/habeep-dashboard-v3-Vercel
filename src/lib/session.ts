@@ -1,5 +1,6 @@
 const LOCAL_SESSION_KEY = 'habeep-auth-session-local'
 const TEMP_SESSION_KEY = 'habeep-auth-session-temp'
+export const AUTH_SESSION_EVENT = 'habeep:auth-session-change'
 
 type SessionStorageTarget = 'local' | 'session'
 
@@ -9,6 +10,20 @@ export type AuthSession = {
   sessionId?: string
   expiresAt?: string
   user?: unknown
+}
+
+function emitAuthSessionChange(session: AuthSession | null) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(AUTH_SESSION_EVENT, {
+      detail: {
+        hasSession: Boolean(session?.accessToken),
+      },
+    }),
+  )
 }
 
 function parseSession(value: string | null): AuthSession | null {
@@ -59,10 +74,12 @@ function writeSession(session: AuthSession, target: SessionStorageTarget) {
 
   if (target === 'local') {
     window.localStorage.setItem(LOCAL_SESSION_KEY, serialized)
+    emitAuthSessionChange(session)
     return
   }
 
   window.sessionStorage.setItem(TEMP_SESSION_KEY, serialized)
+  emitAuthSessionChange(session)
 }
 
 export function saveSession(session: AuthSession, rememberMe: boolean) {
@@ -116,4 +133,5 @@ export function clearSession() {
 
   window.localStorage.removeItem(LOCAL_SESSION_KEY)
   window.sessionStorage.removeItem(TEMP_SESSION_KEY)
+  emitAuthSessionChange(null)
 }
