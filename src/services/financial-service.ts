@@ -1,4 +1,4 @@
-import { apiGet } from './api-service'
+import { apiGet, apiPost, apiPut } from './api-service'
 
 export type FinancialRevenuePeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
 
@@ -199,6 +199,15 @@ export type FinancialLoan = {
   createdAt: string
 }
 
+export type FinancialLoanStatusUpdatePayload = {
+  status: string
+}
+
+export type FinancialLoanStatusUpdateResult = {
+  loanId: string
+  status: string
+}
+
 export type FinancialLoansPagination = {
   page: number
   perPage: number
@@ -239,6 +248,16 @@ export type FinancialOfflineDepositActivity = {
   reference: string | null
   transactionId: string
   createdAt: string
+}
+
+export type FinancialOfflineDepositActionType = 'savings' | 'wallet' | 'registrationFee' | 'compoundFee'
+
+export type FinancialOfflineDepositAction = 'ACCEPT' | 'DENY'
+
+export type FinancialOfflineDepositActionPayload = {
+  action: FinancialOfflineDepositAction
+  type: FinancialOfflineDepositActionType
+  depositId: string
 }
 
 export type FinancialOfflineDepositsPagination = {
@@ -498,6 +517,11 @@ type FinancialLoansPaginationRaw = {
   perPage?: unknown
   total?: unknown
   totalPages?: unknown
+}
+
+type FinancialLoanStatusUpdateRaw = {
+  loanId?: unknown
+  status?: unknown
 }
 
 type FinancialLoansRaw = {
@@ -1111,6 +1135,10 @@ export async function getFinancialOfflineDeposits(page = 1, perPage = 20) {
   } satisfies FinancialOfflineDeposits
 }
 
+export async function submitFinancialOfflineDepositAction(payload: FinancialOfflineDepositActionPayload) {
+  return apiPost<string, FinancialOfflineDepositActionPayload>('/api/financial/offline-deposits/action', payload)
+}
+
 function normalizeLoanBorrower(value: unknown): FinancialLoanBorrower | null {
   const source = toObject(value) as FinancialLoanBorrowerRaw | null
   if (!source) {
@@ -1248,6 +1276,32 @@ export async function getFinancialLoans(page = 1, perPage = 20) {
     loans: normalizeLoans(rawDetails.loans ?? rawDetails.items ?? rawDetails.activities ?? rawDetails.data),
     pagination: normalizeLoansPagination(rawDetails.pagination ?? rawDetails.meta ?? rawDetails.metadata),
   } satisfies FinancialLoans
+}
+
+function normalizeLoanStatusUpdate(
+  value: unknown,
+  fallbackLoanId: string,
+  fallbackStatus: string,
+): FinancialLoanStatusUpdateResult {
+  const source = toObject(value) as FinancialLoanStatusUpdateRaw | null
+
+  return {
+    loanId: toText(source?.loanId) || fallbackLoanId,
+    status: toText(source?.status) || fallbackStatus,
+  } satisfies FinancialLoanStatusUpdateResult
+}
+
+export async function updateFinancialLoanStatus(
+  loanId: string,
+  payload: FinancialLoanStatusUpdatePayload,
+) {
+  const encodedLoanId = encodeURIComponent(loanId)
+  const rawDetails = await apiPut<unknown, FinancialLoanStatusUpdatePayload>(
+    `/api/financial/loans/${encodedLoanId}/status`,
+    payload,
+  )
+
+  return normalizeLoanStatusUpdate(rawDetails, loanId, payload.status)
 }
 
 function normalizeWalletActivityUser(value: unknown): FinancialWalletActivityUser | null {
